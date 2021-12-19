@@ -13,7 +13,7 @@ for s in students:
     s["badPrefrences"] = []
     s["assigned"] = False
 
-for i in range(1, len(students)):
+for i in range(0, max(len(projects), len(students))):
     random.shuffle(students)
 
     for student in students:
@@ -29,18 +29,19 @@ for i in range(1, len(students)):
             selectedByStudent[studentName] = firstChoice
             projects.remove(firstChoice)
             student["assigned"] = True
+            student["assignedProject"] = firstChoice
         else:
             student["badPrefrences"].append(student["Prefrences"].pop(0))
 
 print()
 print("========================")
-print(selectedByProjects)
+pprint.pprint(selectedByProjects)
 print("------------------------")
-print(selectedByStudent)
-print("------------------------")
-print(projects)
-print("------------------------")
-print("------------------------")
-pprint.pprint(students, width=300)
-print("------------------------")
-print("------------------------")
+pprint.pprint(selectedByStudent)
+# print("------------------------")
+# print(projects)
+# print("------------------------")
+# print("------------------------")
+# pprint.pprint(students, width=300)
+# print("------------------------")
+print("------------------------\n")
