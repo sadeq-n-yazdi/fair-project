@@ -7,7 +7,7 @@ How use?
 
 To make data file:
 ----
-- make a copy of InputForm.ods and open it.
+- make a copy of `InputForm.ods` and open it.
 - complete Prjects sheet
 - while `Projects` sheet is selected, save a copy as CSV and save it as `projects.txt`
 - go to page students
