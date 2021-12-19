@@ -1,19 +1,19 @@
 #!/bin/python3
 
-from data import Projects, Students
+import data
 import random
-import copy
 import pprint
 
 selectedByProjects = dict()
 selectedByStudent = dict()
-projects = copy.deepcopy(Projects)
-students = copy.deepcopy(Students)
+projects = data.getProjects()
+students = data.getStudents()
+
 for s in students:
     s["badPrefrences"] = []
     s["assigned"] = False
 
-for i in range(1, len(Students)):
+for i in range(1, len(students)):
     random.shuffle(students)
 
     for student in students:

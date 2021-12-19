@@ -1,3 +1,5 @@
+
+import copy
 Projects = [
     "Proj 01",
     "Proj 02",
@@ -173,3 +175,11 @@ Students = [
 ]
 
 # print (Students)
+
+
+def getProjects():
+    return copy.deepcopy(Projects)
+
+
+def getStudents():
+    return copy.deepcopy(Students)
