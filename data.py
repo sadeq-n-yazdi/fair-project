@@ -5,7 +5,8 @@ import copy
 def readProjectsFromFile(fileName="projects.txt"):
     with open(fileName) as file:
         theProjects = file.readlines()
-        theProjects = [project.strip() for project in theProjects]
+        theProjects = [project.strip().strip("\"'\n\r")
+                       for project in theProjects]
     return theProjects
 
 
@@ -14,8 +15,8 @@ def readStudentPrefrencesFromFile(fileName="students.txt"):
         lines = file.readlines()
         theStudents = [
             {
-                "Name": (student.split(",")[0]).strip(),
-                "Prefrences":[pref.strip() for pref in student.split(",")[1:]],
+                "Name": (student.split(",")[0]).strip().strip("\"'\n\r"),
+                "Prefrences":[pref.strip().strip("\"'\n\r") for pref in student.split(",")[1:]],
                 "assigned": False,
             } for student in lines
         ]
