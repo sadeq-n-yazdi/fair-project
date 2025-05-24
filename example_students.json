@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Alice",
+    "preferences": ["Project_Alpha", "Project_Beta", "Project_Gamma"]
+  },
+  {
+    "name": "Bob",
+    "preferences": ["Project_Beta", "Project_Omega", "Project_Delta"]
+  },
+  {
+    "name": "Charlie",
+    "preferences": ["Project_Gamma", "Project_Epsilon"]
+  },
+  {
+    "name": "Diana",
+    "preferences": ["Project_Alpha", "Project_Delta", "Project_Omega", "Project_Beta"]
+  },
+  {
+    "name": "Edward",
+    "preferences": ["Project_Epsilon"]
+  },
+  {
+    "name": "Fiona",
+    "preferences": ["Project_NonExistent", "Project_Alpha"]
+  }
+]

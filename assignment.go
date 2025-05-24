@@ -58,13 +58,6 @@ func assignProjects(students []Student, projects []string) (map[string]string, m
 
 				delete(availableProjects, firstChoice) // Remove project from available map
 
-				// Remove the assigned project from the original projects slice for returning remaining projects
-				for j, p := range projects {
-					if p == firstChoice {
-						projects = append(projects[:j], projects[j+1:]...)
-						break
-					}
-				}
 			} else {
 				// Add to bad preferences and remove from current preferences
 				student.BadPreferences = append(student.BadPreferences, firstChoice)

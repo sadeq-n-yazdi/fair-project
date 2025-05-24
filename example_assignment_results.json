@@ -1,0 +1,62 @@
+{
+  "selectedByProjects": {
+    "Project_Alpha": "Alice",
+    "Project_Beta": "Bob",
+    "Project_Gamma": "Charlie",
+    "Project_Epsilon": "Edward"
+  },
+  "selectedByStudent": {
+    "Alice": "Project_Alpha",
+    "Bob": "Project_Beta",
+    "Charlie": "Project_Gamma",
+    "Edward": "Project_Epsilon"
+  },
+  "students": [
+    {
+      "Name": "Alice",
+      "Preferences": ["Project_Beta", "Project_Gamma"],
+      "Assigned": true,
+      "AssignedProject": "Project_Alpha",
+      "BadPreferences": []
+    },
+    {
+      "Name": "Bob",
+      "Preferences": ["Project_Omega", "Project_Delta"],
+      "Assigned": true,
+      "AssignedProject": "Project_Beta",
+      "BadPreferences": []
+    },
+    {
+      "Name": "Charlie",
+      "Preferences": [],
+      "Assigned": true,
+      "AssignedProject": "Project_Gamma",
+      "BadPreferences": ["Project_Epsilon"]
+    },
+    {
+      "Name": "Diana",
+      "Preferences": ["Project_Delta", "Project_Omega", "Project_Beta"],
+      "Assigned": false,
+      "AssignedProject": "",
+      "BadPreferences": ["Project_Alpha"]
+    },
+    {
+      "Name": "Edward",
+      "Preferences": [],
+      "Assigned": true,
+      "AssignedProject": "Project_Epsilon",
+      "BadPreferences": []
+    },
+    {
+      "Name": "Fiona",
+      "Preferences": ["Project_Alpha"],
+      "Assigned": false,
+      "AssignedProject": "",
+      "BadPreferences": ["Project_NonExistent"]
+    }
+  ],
+  "remainingProjects": [
+    "Project_Delta",
+    "Project_Omega"
+  ]
+}
