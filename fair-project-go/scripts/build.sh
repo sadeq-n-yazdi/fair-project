@@ -4,7 +4,7 @@
 
 # Set variables
 BINARY_SERVER="fair-project-server"
-BINARY_CLI="fair-project-cli"
+BINARY_CLI="fair-ctl"
 BUILD_DIR="bin"
 PACKAGE="github.com/sadeq/fair-project-go"
 COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")

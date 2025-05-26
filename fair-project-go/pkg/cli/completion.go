@@ -69,29 +69,49 @@ func CompletionCommand(shell, outFile string) error {
 
 // generateBashCompletion generates a bash completion script
 func generateBashCompletion(binaryName string) string {
-	// Create a completion spec
-	cmd := createCompletionSpec(binaryName)
+	// Since BashComplete is not available in the current version of the package,
+	// we'll use a simple template for bash completion
+	return fmt.Sprintf(`#!/bin/bash
 
-	// Generate the bash completion script
-	return complete.BashComplete(cmd)
+_%s_completions() {
+  COMPREPLY=()
+  local word="${COMP_WORDS[COMP_CWORD]}"
+  local completions="$(COMP_LINE="${COMP_LINE}" COMP_POINT="${COMP_POINT}" %s __complete)"
+  COMPREPLY=( $(compgen -W "$completions" -- "$word") )
+}
+
+complete -F _%s_completions %s
+`, binaryName, binaryName, binaryName, binaryName)
 }
 
 // generateZshCompletion generates a zsh completion script
 func generateZshCompletion(binaryName string) string {
-	// Create a completion spec
-	cmd := createCompletionSpec(binaryName)
+	// Since ZshComplete is not available in the current version of the package,
+	// we'll use a simple template for zsh completion
+	return fmt.Sprintf(`#compdef %s
 
-	// Generate the zsh completion script
-	return complete.ZshComplete(cmd)
+_%s() {
+  local -a completions
+  completions=("${(@f)$(COMP_LINE="${words[*]}" COMP_POINT=$#words %s __complete)}")
+  _describe 'completions' completions
+}
+
+compdef _%s %s
+`, binaryName, binaryName, binaryName, binaryName, binaryName)
 }
 
 // generateFishCompletion generates a fish completion script
 func generateFishCompletion(binaryName string) string {
-	// Create a completion spec
-	cmd := createCompletionSpec(binaryName)
+	// Since FishComplete is not available in the current version of the package,
+	// we'll use a simple template for fish completion
+	return fmt.Sprintf(`function __fish_%s_complete
+  set -l cl (commandline --tokenize --current-process)
+  set -l tokens (commandline --tokenize --cut-at-cursor --current-process)
+  %s __complete $tokens | tr '\n' ' '
+end
 
-	// Generate the fish completion script
-	return complete.FishComplete(cmd)
+complete -f -c %s -a '(__fish_%s_complete)'
+`, binaryName, binaryName, binaryName, binaryName)
 }
 
 // createCompletionSpec creates a completion spec for the CLI
@@ -194,7 +214,7 @@ func createCompletionSpec(binaryName string) *complete.Command {
 func predictClasses() complete.Predictor {
 	return complete.PredictFunc(func(args complete.Args) []string {
 		// Try to list classes
-		classes, err := ListClassTerms()
+		classes, err := GetClassTerms()
 		if err != nil {
 			return nil
 		}
@@ -219,7 +239,7 @@ func predictAssignmentIDs() complete.Predictor {
 		}
 
 		// Try to list assignments for the class
-		assignments, err := ListAssignments(className)
+		assignments, err := GetAssignments(className)
 		if err != nil {
 			return nil
 		}
@@ -231,11 +251,11 @@ func predictAssignmentIDs() complete.Predictor {
 func predictUsers() complete.Predictor {
 	return complete.PredictFunc(func(args complete.Args) []string {
 		// Try to list users
-		users, err := ListUsers()
+		usernames, err := GetUsernames()
 		if err != nil {
 			return nil
 		}
-		return users
+		return usernames
 	})
 }
 

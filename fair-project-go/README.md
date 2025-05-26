@@ -96,12 +96,12 @@ cd fair-project-go
 
 # Build without commit hash
 go build -o bin/fair-project-server ./cmd/server
-go build -o bin/fair-project-cli ./cmd/cli
+go build -o bin/fair-ctl ./cmd/cli
 
 # Build with commit hash
 COMMIT_HASH=$(git rev-parse --short HEAD)
 go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$COMMIT_HASH'" -o bin/fair-project-server ./cmd/server
-go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$COMMIT_HASH'" -o bin/fair-project-cli ./cmd/cli
+go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$COMMIT_HASH'" -o bin/fair-ctl ./cmd/cli
 ```
 
 ### Docker Building
@@ -149,7 +149,7 @@ The CLI provides a command-line interface for the application. Here are the avai
 
 ```
 Usage:
-  fair-project-cli <command> [options]
+  fair-ctl <command> [options]
 
 Commands:
   create-class       Create a new class/term
@@ -166,9 +166,10 @@ Commands:
   change-password    Change a user's password
   list-users         List all users
   generate-env       Generate a new .env file with random values for sensitive fields
+  completion         Generate shell completion scripts
   help               Show this help message
 
-Run 'fair-project-cli <command> -h' for more information on a command.
+Run 'fair-ctl <command> -h' for more information on a command.
 ```
 
 ### Examples
@@ -176,47 +177,108 @@ Run 'fair-project-cli <command> -h' for more information on a command.
 Create a new class/term:
 
 ```bash
-./bin/fair-project-cli create-class -name Fall2023
+./bin/fair-ctl create-class -name Fall2023
 ```
 
 Import projects from a file:
 
 ```bash
-./bin/fair-project-cli import-projects -class Fall2023 -file projects.txt
+./bin/fair-ctl import-projects -class Fall2023 -file projects.txt
 ```
 
 Import students from a file:
 
 ```bash
-./bin/fair-project-cli import-students -class Fall2023 -file students.txt
+./bin/fair-ctl import-students -class Fall2023 -file students.txt
 ```
 
 Run the assignment algorithm:
 
 ```bash
-./bin/fair-project-cli run-assignment -class Fall2023
+./bin/fair-ctl run-assignment -class Fall2023
 ```
 
 Show the details of an assignment:
 
 ```bash
-./bin/fair-project-cli show-assignment -class Fall2023 -id <assignment-id>
+./bin/fair-ctl show-assignment -class Fall2023 -id <assignment-id>
 ```
 
 Export an assignment to a JSON file:
 
 ```bash
-./bin/fair-project-cli export-assignment -class Fall2023 -id <assignment-id> -output assignment.json
+./bin/fair-ctl export-assignment -class Fall2023 -id <assignment-id> -output assignment.json
 ```
 
 Generate a new .env file with random values for sensitive fields:
 
 ```bash
-./bin/fair-project-cli generate-env -output .env
+./bin/fair-ctl generate-env -output .env
 ```
 
 This will create a new .env file with random values for JWT_SECRET, SUPERADMIN_KEY, and POSTGRES_PASSWORD, while setting
 sensible defaults for other configuration values.
+
+### Shell Autocompletion
+
+The CLI supports shell autocompletion for bash, zsh, and fish shells. This feature helps you quickly complete commands,
+flags, and arguments by pressing the Tab key.
+
+#### Generating Completion Scripts
+
+You can generate shell completion scripts using the `completion` command:
+
+```bash
+# For Bash
+./bin/fair-ctl completion bash > ~/.fair-ctl-completion.bash
+
+# For Zsh
+./bin/fair-ctl completion zsh > ~/.fair-ctl-completion.zsh
+
+# For Fish
+./bin/fair-ctl completion fish > ~/.config/fish/fair-ctl-completion.fish
+```
+
+You can also specify an output file directly:
+
+```bash
+./bin/fair-ctl completion -shell bash -output ~/.fair-ctl-completion.bash
+```
+
+#### Activating Autocompletion
+
+After generating the completion script, you need to source it in your shell configuration file:
+
+**Bash**:
+
+```bash
+echo "source ~/.fair-ctl-completion.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Zsh**:
+
+```bash
+echo "source ~/.fair-ctl-completion.zsh" >> ~/.zshrc
+source ~/.zshrc
+```
+
+**Fish**:
+
+```bash
+# Fish automatically loads completions from ~/.config/fish/
+source ~/.config/fish/fair-ctl-completion.fish
+```
+
+#### One-Step Installation
+
+You can also use the CLI to automatically install and activate completion for your current shell:
+
+```bash
+./bin/fair-ctl completion -shell $(basename $SHELL) -output ~/.$(basename $SHELL)rc_fair-ctl
+```
+
+This will generate the appropriate completion script and add it to your shell configuration file.
 
 ## Logging
 

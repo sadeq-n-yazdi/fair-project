@@ -607,3 +607,30 @@ POSTGRES_PORT=5432
 	fmt.Println("Please keep this file secure as it contains sensitive information.")
 	return nil
 }
+
+// GetClassTerms returns a list of class/term names for completion
+func GetClassTerms() ([]string, error) {
+	return storage.ListClassTerms()
+}
+
+// GetAssignments returns a list of assignment IDs for completion
+func GetAssignments(className string) ([]string, error) {
+	if !storage.IsValidClassName(className) {
+		return nil, fmt.Errorf("invalid class/term name '%s': must be alphanumeric, underscore, or hyphen", className)
+	}
+	return storage.ListAssignmentResults(className)
+}
+
+// GetUsernames returns a list of usernames for completion
+func GetUsernames() ([]string, error) {
+	users, err := storage.LoadUsers()
+	if err != nil {
+		return nil, err
+	}
+
+	var usernames []string
+	for username := range users {
+		usernames = append(usernames, username)
+	}
+	return usernames, nil
+}
