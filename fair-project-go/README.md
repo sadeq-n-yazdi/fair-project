@@ -24,26 +24,91 @@ And the following entry points:
 
 ## Building
 
-To build the project, run:
+There are several ways to build the project:
+
+### Using Make
+
+The project includes a Makefile with various targets for building, testing, and running the application:
 
 ```bash
 cd fair-project-go
+
+# Build both server and CLI binaries
+make
+
+# Build only the server binary
+make build-server
+
+# Build only the CLI binary
+make build-cli
+
+# Run tests
+make test
+
+# Clean build artifacts
+make clean
+
+# Build Docker image
+make docker
+
+# Show all available targets
+make help
+```
+
+### Using the Build Script
+
+Alternatively, you can use the build script:
+
+```bash
+cd fair-project-go
+
+# Make the script executable
+chmod +x scripts/build.sh
+
+# Build both server and CLI binaries
+./scripts/build.sh
+
+# Build only the server binary
+./scripts/build.sh server
+
+# Build only the CLI binary
+./scripts/build.sh cli
+
+# Run tests
+./scripts/build.sh test
+
+# Clean build artifacts
+./scripts/build.sh clean
+
+# Show all available commands
+./scripts/build.sh help
+```
+
+### Manual Building
+
+You can also build the project manually:
+
+```bash
+cd fair-project-go
+
+# Build without commit hash
 go build -o bin/fair-project-server ./cmd/server
 go build -o bin/fair-project-cli ./cmd/cli
+
+# Build with commit hash
+COMMIT_HASH=$(git rev-parse --short HEAD)
+go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$COMMIT_HASH'" -o bin/fair-project-server ./cmd/server
+go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$COMMIT_HASH'" -o bin/fair-project-cli ./cmd/cli
 ```
 
-### Building with Git Branch Hash
+### Docker Building
 
-To include the Git branch hash in the version information, use the following build command:
+When building with Docker, the Git commit hash is automatically included in the version information:
 
 ```bash
 cd fair-project-go
-BRANCH_HASH=$(git rev-parse --short HEAD)
-go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$BRANCH_HASH'" -o bin/fair-project-server ./cmd/server
-go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$BRANCH_HASH'" -o bin/fair-project-cli ./cmd/cli
+docker build -t fair-project-server .
 ```
-
-When building with Docker, the Git branch hash is automatically included in the version information.
 
 ## Running the Server
 

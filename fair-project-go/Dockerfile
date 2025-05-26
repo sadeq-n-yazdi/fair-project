@@ -16,10 +16,12 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Get the current git branch hash
-RUN BRANCH_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") && \
-    # Build the application with the branch hash
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$BRANCH_HASH'" -o /fair-project-server ./cmd/server
+# Get the current git branch hash and build the application
+RUN COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") && \
+    # Build the application with the commit hash using the Makefile
+    CGO_ENABLED=0 GOOS=linux make build-server && \
+    # Copy the binary to the root directory for the next stage
+    cp bin/fair-project-server /fair-project-server
 
 # Final stage
 FROM alpine:latest
