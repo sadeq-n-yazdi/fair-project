@@ -93,7 +93,7 @@ func LogError(err error) {
 // HTTPStatusFromErrorCode returns the appropriate HTTP status code for an error code
 func HTTPStatusFromErrorCode(code ErrorCode) int {
 	switch code {
-	case ErrInvalidClassName, ErrInvalidAssignmentID, ErrInvalidRequestBody, ErrEmptyClassName:
+	case ErrInvalidClassName, ErrInvalidAssignmentID, ErrInvalidRequestBody, ErrEmptyClassName, "INVALID_AUTH_HEADER":
 		return http.StatusBadRequest
 	case ErrClassNotFound, ErrProjectsNotFound, ErrStudentsNotFound, ErrAssignmentNotFound, ErrResourceNotFound:
 		return http.StatusNotFound
@@ -101,6 +101,10 @@ func HTTPStatusFromErrorCode(code ErrorCode) int {
 		return http.StatusMethodNotAllowed
 	case ErrNoProjects, ErrNoStudents:
 		return http.StatusUnprocessableEntity
+	case "UNAUTHORIZED", "INVALID_TOKEN", "MISSING_TOKEN", "TOKEN_EXPIRED":
+		return http.StatusUnauthorized
+	case "FORBIDDEN":
+		return http.StatusForbidden
 	default:
 		return http.StatusInternalServerError
 	}

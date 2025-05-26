@@ -45,7 +45,7 @@ func TestTriggerAssignmentHandler(t *testing.T) {
 	rr := executeRequest(req, handler)
 
 	// Check response
-	checkResponseCode(t, http.StatusOK, rr.Code)
+	checkResponseCode(t, http.StatusCreated, rr.Code)
 	checkContentType(t, rr, "application/json")
 
 	// Parse response

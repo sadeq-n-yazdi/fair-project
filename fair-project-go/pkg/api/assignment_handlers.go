@@ -107,7 +107,7 @@ func TriggerAssignmentHandler(w http.ResponseWriter, r *http.Request, className 
 		"assignmentId": assignmentID,
 		"results":      assignmentOutputData,
 	}
-	RespondJSON(w, http.StatusOK, responsePayload)
+	RespondJSON(w, http.StatusCreated, responsePayload)
 }
 
 // ListAssignmentsHandler handles GET requests to list all assignment IDs for a class.
