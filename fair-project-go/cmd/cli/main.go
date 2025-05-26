@@ -2,16 +2,31 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/sadeq/fair-project-go/pkg/cli"
 	"github.com/sadeq/fair-project-go/pkg/storage"
+	"github.com/sadeq/fair-project-go/pkg/version"
 	"log"
 	"os"
 	"strings"
 )
 
 func main() {
+	// Define global flags
+	versionFlag := flag.Bool("version", false, "Print version information and exit")
+	versionFlagShort := flag.Bool("v", false, "Print version information and exit (shorthand)")
+	flag.Parse()
+
+	// Check if version flag is set
+	if *versionFlag || *versionFlagShort {
+		printVersion()
+		return
+	}
+
+	// Reset flag.CommandLine to parse command-specific flags
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
 	// Ensure the base data directory exists
 	if err := storage.EnsureBaseDir(); err != nil {
@@ -294,7 +309,30 @@ func main() {
 	}
 }
 
-// loadEnvFile loads environment variables from .env file
+// printVersion prints the version information and exits
+func printVersion() {
+	versionInfo := version.Map()
+
+	// Print as JSON if stdout is not a terminal
+	if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) == 0 {
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(versionInfo); err != nil {
+			log.Fatalf("Error encoding version information: %v", err)
+		}
+		return
+	}
+
+	// Print in a human-readable format if stdout is a terminal
+	fmt.Printf("Fair Project CLI %s\n", versionInfo["version"])
+	fmt.Printf("  Major: %d\n", versionInfo["major"])
+	fmt.Printf("  Minor: %d\n", versionInfo["minor"])
+	fmt.Printf("  Patch: %d\n", versionInfo["patch"])
+	if hash, ok := versionInfo["branch_hash"].(string); ok && hash != "unknown" {
+		fmt.Printf("  Branch Hash: %s\n", hash)
+	}
+}
+
 func loadEnvFile() {
 	// Try to open the .env file
 	file, err := os.Open(".env")

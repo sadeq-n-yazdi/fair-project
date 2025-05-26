@@ -3,6 +3,9 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
+	"flag"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -127,7 +130,42 @@ func loadEnvFile() {
 	}
 }
 
+// printVersion prints the version information and exits
+func printVersion() {
+	versionInfo := version.Map()
+
+	// Print as JSON if stdout is not a terminal
+	if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) == 0 {
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(versionInfo); err != nil {
+			log.Fatalf("Error encoding version information: %v", err)
+		}
+		return
+	}
+
+	// Print in a human-readable format if stdout is a terminal
+	fmt.Printf("Fair Project Server %s\n", versionInfo["version"])
+	fmt.Printf("  Major: %d\n", versionInfo["major"])
+	fmt.Printf("  Minor: %d\n", versionInfo["minor"])
+	fmt.Printf("  Patch: %d\n", versionInfo["patch"])
+	if hash, ok := versionInfo["branch_hash"].(string); ok && hash != "unknown" {
+		fmt.Printf("  Branch Hash: %s\n", hash)
+	}
+}
+
 func main() {
+	// Define global flags
+	versionFlag := flag.Bool("version", false, "Print version information and exit")
+	versionFlagShort := flag.Bool("v", false, "Print version information and exit (shorthand)")
+	flag.Parse()
+
+	// Check if version flag is set
+	if *versionFlag || *versionFlagShort {
+		printVersion()
+		return
+	}
+
 	// 1. Seed the random number generator
 	rand.Seed(time.Now().UnixNano())
 
