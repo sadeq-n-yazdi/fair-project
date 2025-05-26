@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        COMMIT_HASH: ${COMMIT_HASH:-unknown}
     container_name: fair-project-server
     ports:
       - "${PORT:-8080}:${PORT:-8080}"

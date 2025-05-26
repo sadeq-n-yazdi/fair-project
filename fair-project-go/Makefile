@@ -47,13 +47,13 @@ clean:
 .PHONY: docker
 docker:
 	@echo "Building Docker image..."
-	docker build -t fair-project-server .
+	docker build --build-arg COMMIT_HASH=$(COMMIT_HASH) -t fair-project-server .
 
 # Docker Compose commands
 .PHONY: docker-compose-up
 docker-compose-up:
 	@echo "Starting services with Docker Compose..."
-	docker-compose up -d
+	COMMIT_HASH=$(COMMIT_HASH) docker-compose up -d
 
 .PHONY: docker-compose-down
 docker-compose-down:
