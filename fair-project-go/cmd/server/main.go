@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"log"
 	"math/rand"
 	"net/http"
@@ -137,22 +138,26 @@ func main() {
 	config.InitFromEnv()
 	log.Printf("Log level set to: %s", config.GetLogLevel())
 
-	// 3. Set the base data directory from environment variable or use default
+	// 3. Get the data directory from environment variable or use default
 	dataDir := os.Getenv("DATA_DIR")
-	if dataDir != "" {
-		storage.SetBaseDataDir(dataDir)
-		log.Printf("Using data directory: %s", dataDir)
-	} else {
-		log.Printf("Using default data directory: %s", storage.GetBaseDataDir())
+	if dataDir == "" {
+		dataDir = "data"
 	}
+	log.Printf("Using data directory: %s", dataDir)
 
-	// 4. Ensure the base data directory exists
-	if err := storage.EnsureBaseDir(); err != nil { // From storage.go
-		log.Fatalf("Failed to ensure base data directory: %v", err)
+	// 4. Create a storage manager with file-based storage
+	ctx := context.Background()
+	storageConfig := map[string]string{
+		"baseDir": dataDir,
 	}
+	storageManager, err := storage.NewManager(ctx, storage.StorageTypeFile, storageConfig)
+	if err != nil {
+		log.Fatalf("Failed to create storage manager: %v", err)
+	}
+	defer storageManager.Close(ctx)
 
 	// 5. Initialize default users
-	if err := storage.InitializeDefaultUsers(); err != nil {
+	if err := storageManager.InitializeDefaultUsers(ctx); err != nil {
 		log.Fatalf("Failed to initialize default users: %v", err)
 	}
 
@@ -162,17 +167,20 @@ func main() {
 		authpkg.SetJWTSecret(jwtSecret)
 	}
 
-	// 7. Create a handler with the logging and authentication middleware
-	handler := logging.Middleware(authmiddleware.Middleware(http.HandlerFunc(masterRouter)))
+	// 7. Create an API handler with the storage manager
+	apiHandler := api.NewHandler(storageManager)
 
-	// 8. Get the port from environment variable or use default
+	// 8. Create a handler with the logging and authentication middleware
+	handler := logging.Middleware(authmiddleware.Middleware(http.HandlerFunc(apiHandler.MasterRouter)))
+
+	// 9. Get the port from environment variable or use default
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	port = ":" + port
 
-	// 9. Start the HTTP server with the middleware
+	// 10. Start the HTTP server with the middleware
 	log.Printf("Starting server on port %s. Listening for requests on / , /classes, and /classes/...\n", port)
 	if err := http.ListenAndServe(port, handler); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
