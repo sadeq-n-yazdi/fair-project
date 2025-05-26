@@ -13,8 +13,11 @@ The project has been restructured into the following packages:
 - `pkg/storage`: Data persistence and file I/O operations
 - `pkg/api`: HTTP API handlers
 - `pkg/cli`: Command-line interface functions
+- `pkg/config`: Configuration settings for the application
 - `pkg/docs`: API documentation (OpenAPI specification and Swagger UI)
 - `pkg/errors`: Error handling and logging
+- `pkg/middleware`: HTTP middleware components
+  - `logging`: Request/response logging middleware
 - `pkg/version`: Version information
 
 And the following entry points:
@@ -195,6 +198,32 @@ Export an assignment to a JSON file:
 ./bin/fair-project-cli export-assignment -class Fall2023 -id <assignment-id> -output assignment.json
 ```
 
+## Logging
+
+The API server includes a logging middleware that logs all HTTP requests and responses. The verbosity of the logging can be configured using the `LOG_LEVEL` environment variable:
+
+- `none`: Disables all logging
+- `error`: Logs only errors
+- `info`: Logs errors and informational messages (default)
+- `debug`: Logs errors, informational messages, and debug messages (including request/response bodies)
+
+Example log output at the `info` level:
+
+```
+2023/05/01 12:34:56 [INFO] Request: GET /classes
+2023/05/01 12:34:56 [INFO] Response: GET /classes - Status: 200 - Duration: 5.123ms
+```
+
+Example log output at the `debug` level:
+
+```
+2023/05/01 12:34:56 [INFO] Request: POST /classes
+2023/05/01 12:34:56 [DEBUG] Request Headers: map[Content-Type:[application/json] User-Agent:[curl/7.68.0]]
+2023/05/01 12:34:56 [DEBUG] Request Body: {"name":"Fall2023"}
+2023/05/01 12:34:56 [INFO] Response: POST /classes - Status: 201 - Duration: 10.456ms
+2023/05/01 12:34:56 [DEBUG] Response Body: {"id":"123","name":"Fall2023"}
+```
+
 ## API Documentation
 
 The API is documented using the OpenAPI 3.0 specification. You can access the documentation in two ways:
@@ -237,16 +266,22 @@ The Docker container can be configured using environment variables:
 
 - `PORT`: The port on which the server will listen (default: 8080)
 - `DATA_DIR`: The directory where the data will be stored (default: /app/data)
+- `LOG_LEVEL`: The verbosity level of logging (default: info)
+  - `none`: Disables all logging
+  - `error`: Logs only errors
+  - `info`: Logs errors and informational messages
+  - `debug`: Logs errors, informational messages, and debug messages (including request/response bodies)
 
 Example:
 
 ```bash
-docker run -p 9000:9000 -e PORT=9000 -e DATA_DIR=/data -v /path/to/data:/data fair-project-server
+docker run -p 9000:9000 -e PORT=9000 -e DATA_DIR=/data -e LOG_LEVEL=debug -v /path/to/data:/data fair-project-server
 ```
 
 This will:
 - Run the server on port 9000
 - Store the data in `/data` inside the container
+- Set the log level to debug (verbose logging)
 - Mount `/path/to/data` on your host to `/data` in the container
 
 ## File Formats

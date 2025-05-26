@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,9 +10,9 @@ import (
 )
 
 const (
-	baseDataDir         = "data"
-	projectsFilename    = "projects.json"
-	studentsFilename    = "students.json"
+	baseDataDir          = "data"
+	projectsFilename     = "projects.json"
+	studentsFilename     = "students.json"
 	assignmentFilePrefix = "assignment_"
 )
 

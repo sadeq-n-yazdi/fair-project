@@ -52,15 +52,24 @@ func TestCreateClassTermHandler(t *testing.T) {
 			checkContentType(t, rr, "application/json")
 
 			// Parse response
-			var response map[string]string
-			parseResponse(t, rr, &response)
-
-			// Check response content
 			if tc.expectedError {
-				if _, ok := response["error"]; !ok {
-					t.Errorf("Expected error in response, got: %v", response)
+				// For error responses, expect a nested error object
+				var response map[string]map[string]string
+				parseResponse(t, rr, &response)
+
+				// Check response content
+				if errorObj, ok := response["error"]; !ok {
+					t.Errorf("Expected error object in response, got: %v", response)
+				} else if _, ok := errorObj["code"]; !ok {
+					t.Errorf("Expected error code in response, got: %v", response)
+				} else if _, ok := errorObj["message"]; !ok {
+					t.Errorf("Expected error message in response, got: %v", response)
 				}
 			} else {
+				// For success responses, expect a simple message
+				var response map[string]string
+				parseResponse(t, rr, &response)
+
 				if _, ok := response["message"]; !ok {
 					t.Errorf("Expected message in response, got: %v", response)
 				}
