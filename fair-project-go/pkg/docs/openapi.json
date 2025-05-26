@@ -1385,6 +1385,37 @@
           }
         }
       }
+    },
+    "/user/whoami": {
+      "get": {
+        "summary": "Get current user information",
+        "description": "Returns the current user's information (username, status, and roles) if authenticated. If not authenticated, returns a response indicating that.",
+        "tags": [
+          "Authentication"
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhoAmIResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1596,6 +1627,37 @@
             "description": "Whether the user should be enabled"
           }
         }
+      },
+      "WhoAmIResponse": {
+        "type": "object",
+        "properties": {
+          "authenticated": {
+            "type": "boolean",
+            "description": "Whether the user is authenticated"
+          },
+          "username": {
+            "type": "string",
+            "description": "Username of the authenticated user"
+          },
+          "status": {
+            "type": "boolean",
+            "description": "Whether the user is enabled"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            },
+            "description": "Roles assigned to the user"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message if not authenticated"
+          }
+        },
+        "required": [
+          "authenticated"
+        ]
       },
       "TokenResponse": {
         "type": "object",
