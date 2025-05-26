@@ -339,12 +339,76 @@ func main() {
 	}
 	log.Printf("Using data directory: %s", dataDir)
 
-	// 4. Create a storage manager with file-based storage
-	ctx := context.Background()
-	storageConfig := map[string]string{
-		"baseDir": dataDir,
+	// 4. Determine storage type and configuration
+	storageType := storage.StorageTypeFile
+	storageTypeStr := os.Getenv("STORAGE_TYPE")
+	if storageTypeStr != "" {
+		switch storageTypeStr {
+		case "file":
+			storageType = storage.StorageTypeFile
+		case "sqlite":
+			storageType = storage.StorageTypeSQLite
+		case "postgres":
+			storageType = storage.StorageTypePostgres
+		default:
+			log.Printf("Unknown storage type: %s, using file storage", storageTypeStr)
+		}
 	}
-	storageManager, err := storage.NewManager(ctx, storage.StorageTypeFile, storageConfig)
+	log.Printf("Using storage type: %s", storageType)
+
+	// 5. Create storage configuration
+	storageConfig := map[string]string{}
+
+	switch storageType {
+	case storage.StorageTypeFile:
+		storageConfig["baseDir"] = dataDir
+	case storage.StorageTypeSQLite:
+		dbPath := os.Getenv("SQLITE_DB_PATH")
+		if dbPath == "" {
+			dbPath = filepath.Join(dataDir, "fair-project.db")
+		}
+		storageConfig["dbPath"] = dbPath
+	case storage.StorageTypePostgres:
+		// Build PostgreSQL connection string from environment variables
+		host := os.Getenv("POSTGRES_HOST")
+		port := os.Getenv("POSTGRES_PORT")
+		user := os.Getenv("POSTGRES_USER")
+		password := os.Getenv("POSTGRES_PASSWORD")
+		dbname := os.Getenv("POSTGRES_DB")
+		sslmode := os.Getenv("POSTGRES_SSLMODE")
+
+		// Set defaults
+		if host == "" {
+			host = "localhost"
+		}
+		if port == "" {
+			port = "5432"
+		}
+		if user == "" {
+			user = "postgres"
+		}
+		if dbname == "" {
+			dbname = "fair_project"
+		}
+		if sslmode == "" {
+			sslmode = "disable"
+		}
+
+		// Build connection string
+		connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			host, port, user, password, dbname, sslmode)
+
+		// Allow overriding the entire connection string
+		if customConnStr := os.Getenv("POSTGRES_CONN_STR"); customConnStr != "" {
+			connStr = customConnStr
+		}
+
+		storageConfig["connStr"] = connStr
+	}
+
+	// 6. Create a storage manager
+	ctx := context.Background()
+	storageManager, err := storage.NewManager(ctx, storageType, storageConfig)
 	if err != nil {
 		log.Fatalf("Failed to create storage manager: %v", err)
 	}

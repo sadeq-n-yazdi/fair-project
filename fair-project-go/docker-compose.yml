@@ -16,6 +16,14 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - JWT_SECRET=${JWT_SECRET}
       - SUPERADMIN_KEY=${SUPERADMIN_KEY}
+      - STORAGE_TYPE=${STORAGE_TYPE:-file}
+      # PostgreSQL configuration
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-fairuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fairpassword}
+      - POSTGRES_DB=${POSTGRES_DB:-fairdb}
+      - POSTGRES_SSLMODE=${POSTGRES_SSLMODE:-disable}
     restart: unless-stopped
     networks:
       - fair-network

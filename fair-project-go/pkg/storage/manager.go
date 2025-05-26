@@ -7,6 +7,7 @@ import (
 
 	"github.com/sadeq/fair-project-go/pkg/storage/repository"
 	"github.com/sadeq/fair-project-go/pkg/storage/repository/file"
+	"github.com/sadeq/fair-project-go/pkg/storage/repository/postgres"
 )
 
 // StorageType represents the type of storage to use
@@ -49,8 +50,11 @@ func NewManager(ctx context.Context, storageType StorageType, config map[string]
 		// SQLite factory would be created here
 		return nil, fmt.Errorf("SQLite storage not implemented yet")
 	case StorageTypePostgres:
-		// PostgreSQL factory would be created here
-		return nil, fmt.Errorf("PostgreSQL storage not implemented yet")
+		connStr := config["connStr"]
+		if connStr == "" {
+			return nil, fmt.Errorf("PostgreSQL connection string not provided")
+		}
+		factory = postgres.NewFactory(connStr)
 	default:
 		return nil, fmt.Errorf("unknown storage type: %s", storageType)
 	}

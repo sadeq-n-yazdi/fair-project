@@ -413,6 +413,22 @@ The Docker container can be configured using environment variables:
   - `debug`: Logs errors, informational messages, and debug messages (including request/response bodies)
 - `JWT_SECRET`: The secret key used to sign JWT tokens (default: a random string)
 - `SUPERADMIN_KEY`: The key used for creating the first super admin via CLI
+- `STORAGE_TYPE`: The type of storage to use (default: file)
+    - `file`: File-based storage
+    - `sqlite`: SQLite database storage
+    - `postgres`: PostgreSQL database storage
+
+#### PostgreSQL Configuration
+
+When using PostgreSQL storage (`STORAGE_TYPE=postgres`), the following environment variables are used:
+
+- `POSTGRES_HOST`: PostgreSQL server hostname (default: localhost)
+- `POSTGRES_PORT`: PostgreSQL server port (default: 5432)
+- `POSTGRES_USER`: PostgreSQL username (default: postgres)
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_DB`: PostgreSQL database name (default: fair_project)
+- `POSTGRES_SSLMODE`: PostgreSQL SSL mode (default: disable)
+- `POSTGRES_CONN_STR`: Full PostgreSQL connection string (overrides individual settings)
 
 #### Using Environment Variables Directly
 
@@ -462,12 +478,44 @@ For a more complete setup, you can use Docker Compose to run the API server alon
 
 ### Starting the Services
 
-To start all services:
+To start all services with file-based storage (default):
 
 ```bash
 cd fair-project-go
 docker-compose up -d
 ```
+
+To use PostgreSQL storage instead of file-based storage:
+
+1. Create a `.env` file with the following content (or modify the provided `.env.example`):
+
+```
+# Storage type (file, sqlite, postgres)
+STORAGE_TYPE=postgres
+
+# PostgreSQL Configuration
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_USER=fairuser
+POSTGRES_PASSWORD=your_secure_password_here
+POSTGRES_DB=fairdb
+POSTGRES_SSLMODE=disable
+
+# Other configuration...
+JWT_SECRET=your_jwt_secret_here
+PORT=8080
+LOG_LEVEL=INFO
+```
+
+2. Start the services:
+
+```bash
+cd fair-project-go
+docker-compose up -d
+```
+
+The application will connect to the PostgreSQL database automatically. The database data will be persisted in a Docker
+volume named `postgres_data`.
 
 Or use the Makefile:
 
