@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sadeq/fair-project-go/pkg/errors"
 	"github.com/sadeq/fair-project-go/pkg/models"
 	"github.com/sadeq/fair-project-go/pkg/storage"
 )
@@ -15,7 +16,7 @@ import (
 // Response: Success (201) or Error (400, 409, 500)
 func CreateClassTermHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		RespondError(w, http.StatusMethodNotAllowed, "Only POST method is allowed")
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only POST method is allowed"))
 		return
 	}
 
@@ -24,32 +25,32 @@ func CreateClassTermHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		RespondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
+		HandleError(w, errors.Wrap(err, errors.ErrInvalidRequestBody, "Invalid request body"))
 		return
 	}
 	defer r.Body.Close()
 
 	className := strings.TrimSpace(reqBody.Name)
 	if className == "" {
-		RespondError(w, http.StatusBadRequest, "Class/term name cannot be empty")
+		HandleError(w, errors.New(errors.ErrEmptyClassName, "Class/term name cannot be empty"))
 		return
 	}
 
 	// IsValidClassName is in storage.go
 	if !storage.IsValidClassName(className) {
-		RespondError(w, http.StatusBadRequest, "Invalid class/term name format. Use alphanumeric, underscores, or hyphens.")
+		HandleError(w, errors.New(errors.ErrInvalidClassName, "Invalid class/term name format. Use alphanumeric, underscores, or hyphens"))
 		return
 	}
 
 	err := storage.CreateClassTermDir(className) // From storage.go
 	if err != nil {
 		if os.IsExist(err) { // This check should now work due to error wrapping in CreateClassTermDir
-			RespondError(w, http.StatusConflict, "Class/term directory '"+className+"' already exists.")
+			HandleError(w, errors.Wrap(err, errors.ErrClassNotFound, "Class/term already exists"))
 		} else if strings.Contains(err.Error(), "invalid class/term name") {
 			// Check for the specific validation error text from CreateClassTermDir
-			RespondError(w, http.StatusBadRequest, err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrInvalidClassName, "Invalid class/term name"))
 		} else {
-			RespondError(w, http.StatusInternalServerError, "Failed to create class/term directory: "+err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrInternal, "Failed to create class/term directory"))
 		}
 		return
 	}
@@ -61,13 +62,13 @@ func CreateClassTermHandler(w http.ResponseWriter, r *http.Request) {
 // Response: Success (200) with list of class names or Error (500)
 func ListClassTermsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		RespondError(w, http.StatusMethodNotAllowed, "Only GET method is allowed")
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only GET method is allowed"))
 		return
 	}
 
 	classTerms, err := storage.ListClassTerms() // From storage.go
 	if err != nil {
-		RespondError(w, http.StatusInternalServerError, "Failed to list class/terms: "+err.Error())
+		HandleError(w, errors.Wrap(err, errors.ErrInternal, "Failed to list class/terms"))
 		return
 	}
 
@@ -82,7 +83,7 @@ func ListClassTermsHandler(w http.ResponseWriter, r *http.Request) {
 // URL: /classes/{className}/projects
 func ProjectsHandler(w http.ResponseWriter, r *http.Request, className string) {
 	if !storage.IsValidClassName(className) {
-		RespondError(w, http.StatusBadRequest, "Invalid class/term name format in URL.")
+		HandleError(w, errors.New(errors.ErrInvalidClassName, "Invalid class/term name format"))
 		return
 	}
 
@@ -90,23 +91,23 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request, className string) {
 	case http.MethodPost: // Upload projects
 		var projects []string
 		if err := json.NewDecoder(r.Body).Decode(&projects); err != nil {
-			RespondError(w, http.StatusBadRequest, "Invalid request body, expected JSON array of project strings: "+err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrInvalidRequestBody, "Invalid request body, expected JSON array of project strings"))
 			return
 		}
 		defer r.Body.Close()
 
 		// Basic validation: check if projects list is empty (optional, based on requirements)
 		// if len(projects) == 0 {
-		// RespondError(w, http.StatusBadRequest, "Projects list cannot be empty")
+		// HandleError(w, errors.New(errors.ErrNoProjects, "Projects list cannot be empty"))
 		// return
 		// }
 
 		err := storage.SaveProjects(className, projects) // From storage.go
 		if err != nil {
 			if os.IsNotExist(err) { // Check if class directory doesn't exist
-				RespondError(w, http.StatusNotFound, "Class/term directory '"+className+"' not found: "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrClassNotFound, "Class/term not found"))
 			} else {
-				RespondError(w, http.StatusInternalServerError, "Failed to save projects: "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrFailedToSaveProjects, "Failed to save projects"))
 			}
 			return
 		}
@@ -116,9 +117,9 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request, className string) {
 		projects, err := storage.LoadProjects(className) // From storage.go
 		if err != nil {
 			if os.IsNotExist(err) {
-				RespondError(w, http.StatusNotFound, "Projects file not found for class/term '"+className+"': "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrProjectsNotFound, "Projects not found"))
 			} else {
-				RespondError(w, http.StatusInternalServerError, "Failed to load projects: "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrFailedToLoadProjects, "Failed to load projects"))
 			}
 			return
 		}
@@ -128,7 +129,7 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request, className string) {
 		RespondJSON(w, http.StatusOK, projects)
 
 	default:
-		RespondError(w, http.StatusMethodNotAllowed, "Only GET and POST methods are allowed for projects")
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only GET and POST methods are allowed for projects"))
 	}
 }
 

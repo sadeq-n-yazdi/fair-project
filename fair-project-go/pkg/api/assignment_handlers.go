@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sadeq/fair-project-go/pkg/assignment"
+	"github.com/sadeq/fair-project-go/pkg/errors"
 	"github.com/sadeq/fair-project-go/pkg/models"
 	"github.com/sadeq/fair-project-go/pkg/storage"
 )
@@ -15,13 +16,13 @@ import (
 // POST /classes/{className}/assign
 func TriggerAssignmentHandler(w http.ResponseWriter, r *http.Request, className string) {
 	if r.Method != http.MethodPost {
-		RespondError(w, http.StatusMethodNotAllowed, "Only POST method is allowed for triggering assignments")
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only POST method is allowed for triggering assignments"))
 		return
 	}
 
 	// Validate className (already done by masterClassResourceHandler, but good for defense)
 	if !storage.IsValidClassName(className) {
-		RespondError(w, http.StatusBadRequest, "Invalid class/term name format in URL: "+className)
+		HandleError(w, errors.New(errors.ErrInvalidClassName, "Invalid class/term name format"))
 		return
 	}
 
@@ -29,14 +30,14 @@ func TriggerAssignmentHandler(w http.ResponseWriter, r *http.Request, className 
 	projects, err := storage.LoadProjects(className) // From storage.go
 	if err != nil {
 		if os.IsNotExist(err) {
-			RespondError(w, http.StatusNotFound, "Projects not found for class/term '"+className+"'. Please upload projects first.")
+			HandleError(w, errors.Wrap(err, errors.ErrProjectsNotFound, "Projects not found. Please upload projects first"))
 		} else {
-			RespondError(w, http.StatusInternalServerError, "Failed to load projects: "+err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrFailedToLoadProjects, "Failed to load projects"))
 		}
 		return
 	}
 	if len(projects) == 0 {
-		RespondError(w, http.StatusUnprocessableEntity, "No projects found for class/term '"+className+"'. Assignment cannot run without projects.")
+		HandleError(w, errors.New(errors.ErrNoProjects, "No projects found. Assignment cannot run without projects"))
 		return
 	}
 
@@ -44,14 +45,14 @@ func TriggerAssignmentHandler(w http.ResponseWriter, r *http.Request, className 
 	studentInputs, err := storage.LoadStudents(className) // From storage.go
 	if err != nil {
 		if os.IsNotExist(err) {
-			RespondError(w, http.StatusNotFound, "Students data not found for class/term '"+className+"'. Please upload students data first.")
+			HandleError(w, errors.Wrap(err, errors.ErrStudentsNotFound, "Students data not found. Please upload students data first"))
 		} else {
-			RespondError(w, http.StatusInternalServerError, "Failed to load students data: "+err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrFailedToLoadStudents, "Failed to load students data"))
 		}
 		return
 	}
 	if len(studentInputs) == 0 {
-		RespondError(w, http.StatusUnprocessableEntity, "No students found for class/term '"+className+"'. Assignment cannot run without students.")
+		HandleError(w, errors.New(errors.ErrNoStudents, "No students found. Assignment cannot run without students"))
 		return
 	}
 
@@ -85,7 +86,7 @@ func TriggerAssignmentHandler(w http.ResponseWriter, r *http.Request, className 
 	// 7. Save the results
 	// SaveAssignmentResults is from storage.go
 	if err := storage.SaveAssignmentResults(className, assignmentID, assignmentOutputData); err != nil {
-		RespondError(w, http.StatusInternalServerError, "Failed to save assignment results: "+err.Error())
+		HandleError(w, errors.Wrap(err, errors.ErrFailedToSaveAssignment, "Failed to save assignment results"))
 		return
 	}
 
@@ -98,7 +99,7 @@ func TriggerAssignmentHandler(w http.ResponseWriter, r *http.Request, className 
 	// A 201 Created might be more appropriate if the assignment itself is seen as a new resource.
 	// However, since we save it and give it an ID, and the request is to "trigger" an action,
 	// 200 OK with the result is also common. Let's use 200 OK.
-	
+
 	// To include assignmentID and class in the response, we can create a wrapper struct or a map
 	responsePayload := map[string]interface{}{
 		"message":      "Assignment completed successfully",
@@ -113,22 +114,22 @@ func TriggerAssignmentHandler(w http.ResponseWriter, r *http.Request, className 
 // GET /classes/{className}/assignments
 func ListAssignmentsHandler(w http.ResponseWriter, r *http.Request, className string) {
 	if r.Method != http.MethodGet {
-		RespondError(w, http.StatusMethodNotAllowed, "Only GET method is allowed for listing assignments")
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only GET method is allowed for listing assignments"))
 		return
 	}
 
 	// Validate className (already done by masterClassResourceHandler, but good for defense)
 	if !storage.IsValidClassName(className) {
-		RespondError(w, http.StatusBadRequest, "Invalid class/term name format in URL: "+className)
+		HandleError(w, errors.New(errors.ErrInvalidClassName, "Invalid class/term name format"))
 		return
 	}
 
 	assignmentIDs, err := storage.ListAssignmentResults(className) // From storage.go
 	if err != nil {
 		if os.IsNotExist(err) { // Directory for className might not exist
-			RespondError(w, http.StatusNotFound, "Class/term '"+className+"' not found or has no assignments.")
+			HandleError(w, errors.Wrap(err, errors.ErrClassNotFound, "Class/term not found or has no assignments"))
 		} else {
-			RespondError(w, http.StatusInternalServerError, "Failed to list assignments: "+err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrFailedToListAssignments, "Failed to list assignments"))
 		}
 		return
 	}
@@ -143,26 +144,26 @@ func ListAssignmentsHandler(w http.ResponseWriter, r *http.Request, className st
 // GET /classes/{className}/assignments/{assignmentID}
 func GetAssignmentResultHandler(w http.ResponseWriter, r *http.Request, className string, assignmentID string) {
 	if r.Method != http.MethodGet {
-		RespondError(w, http.StatusMethodNotAllowed, "Only GET method is allowed for fetching an assignment result")
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only GET method is allowed for fetching an assignment result"))
 		return
 	}
 
 	// Validate className and assignmentID (already done by masterClassResourceHandler, but good for defense)
 	if !storage.IsValidClassName(className) {
-		RespondError(w, http.StatusBadRequest, "Invalid class/term name format in URL: "+className)
+		HandleError(w, errors.New(errors.ErrInvalidClassName, "Invalid class/term name format"))
 		return
 	}
 	if !storage.IsValidClassName(assignmentID) { // Using same validation as className for simplicity
-		RespondError(w, http.StatusBadRequest, "Invalid assignment ID format in URL: "+assignmentID)
+		HandleError(w, errors.New(errors.ErrInvalidAssignmentID, "Invalid assignment ID format"))
 		return
 	}
 
 	result, err := storage.LoadAssignmentResult(className, assignmentID) // From storage.go
 	if err != nil {
 		if os.IsNotExist(err) {
-			RespondError(w, http.StatusNotFound, "Assignment result '"+assignmentID+"' not found for class/term '"+className+"'.")
+			HandleError(w, errors.Wrap(err, errors.ErrAssignmentNotFound, "Assignment result not found"))
 		} else {
-			RespondError(w, http.StatusInternalServerError, "Failed to load assignment result: "+err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrFailedToLoadAssignment, "Failed to load assignment result"))
 		}
 		return
 	}
