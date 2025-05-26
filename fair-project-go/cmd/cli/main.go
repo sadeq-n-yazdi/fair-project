@@ -26,6 +26,11 @@ func main() {
 	// Load environment variables from .env file
 	loadEnvFile()
 
+	// Initialize default users if none exist
+	if err := storage.InitializeDefaultUsers(); err != nil {
+		log.Fatalf("Failed to initialize default users: %v", err)
+	}
+
 	// Prompt for superadmin creation if none exists
 	if err := cli.PromptForSuperAdmin(); err != nil {
 		log.Printf("Warning: Failed to prompt for superadmin: %v", err)
