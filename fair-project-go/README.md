@@ -404,7 +404,7 @@ This will:
 
 The Docker container can be configured using environment variables:
 
-- `PORT`: The port on which the server will listen (default: 8080)
+- `PORT`: The port on which the server will listen to (default: 8080)
 - `DATA_DIR`: The directory where the data will be stored (default: /app/data)
 - `LOG_LEVEL`: The verbosity level of logging (default: info)
   - `none`: Disables all logging
@@ -554,7 +554,7 @@ Docker Compose will automatically use these variables when you run `docker-compo
 
 The API server can be configured using the following environment variables:
 
-- `PORT`: The port on which the server will listen (default: 8080)
+- `PORT`: The port on which the server will listen to (default: 8080)
 - `DATA_DIR`: The directory where the data will be stored (default: /app/data)
 - `LOG_LEVEL`: The verbosity level of logging (default: info)
 - `JWT_SECRET`: The secret key used to sign JWT tokens
@@ -567,7 +567,7 @@ The PostgreSQL database can be configured using the following environment variab
 - `POSTGRES_USER`: The username for the database (default: fairuser)
 - `POSTGRES_PASSWORD`: The password for the database (default: fairpassword)
 - `POSTGRES_DB`: The name of the database (default: fairdb)
-- `POSTGRES_PORT`: The port on which PostgreSQL will listen (default: 5432)
+- `POSTGRES_PORT`: The port on which PostgreSQL will listen to (default: 5432)
 
 #### Overriding Environment Variables
 
