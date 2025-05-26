@@ -2,7 +2,7 @@ package main
 
 import (
 	"math/rand"
-	"time"
+	_ "time"
 )
 
 // assignProjects assigns students to projects based on their preferences.
