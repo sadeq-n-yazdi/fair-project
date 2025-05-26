@@ -126,6 +126,13 @@ The server will start on port 8080 and provide the following endpoints:
 - `GET /`: Welcome message with version information
 - `GET /version`: Get the current version of the API
 - `GET /docs`: API documentation (HTML UI or JSON)
+- `POST /auth/login`: Authenticate a user and get a JWT token
+- `GET /auth/users`: List all users (admin and superadmin only)
+- `POST /auth/users`: Create a new user (admin and superadmin only)
+- `GET /auth/users/{username}`: Get a specific user (admin and superadmin only, or the user themselves)
+- `PUT /auth/users/{username}`: Update a user's roles and enabled status (admin and superadmin only)
+- `DELETE /auth/users/{username}`: Delete a user (superadmin only)
+- `GET /user/whoami`: Get the current user's information (username, status, and roles)
 - `POST /classes`: Create a new class/term
 - `GET /classes`: List all class/terms
 - `POST /classes/{className}/projects`: Upload projects for a class/term

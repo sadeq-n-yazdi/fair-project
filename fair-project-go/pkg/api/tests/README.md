@@ -8,9 +8,10 @@ The API endpoints are tested using Go's built-in testing framework. The tests ar
 
 1. **Test Utilities**: Common functions for setting up test environments, creating test requests, and checking responses.
 2. **HTTP Utilities Tests**: Tests for the HTTP utility functions that handle JSON responses.
-3. **Class Handlers Tests**: Tests for the class-related endpoints.
-4. **Assignment Handlers Tests**: Tests for the assignment-related endpoints.
-5. **Server Tests**: Tests for the server's routing logic.
+3. **Authentication Tests**: Tests for the authentication-related endpoints.
+4. **Class Handlers Tests**: Tests for the class-related endpoints.
+5. **Assignment Handlers Tests**: Tests for the assignment-related endpoints.
+6. **Server Tests**: Tests for the server's routing logic.
 
 ### Test Environment
 
@@ -32,15 +33,22 @@ The test utilities include functions for:
 The following API endpoints have been tested:
 
 1. **GET /**: Returns a welcome message.
-2. **POST /classes**: Creates a new class/term.
-3. **GET /classes**: Lists all class/terms.
-4. **POST /classes/{className}/projects**: Uploads projects for a class/term.
-5. **GET /classes/{className}/projects**: Gets projects for a class/term.
-6. **POST /classes/{className}/students**: Uploads students for a class/term.
-7. **GET /classes/{className}/students**: Gets students for a class/term.
-8. **POST /classes/{className}/assign**: Runs the assignment algorithm for a class/term.
-9. **GET /classes/{className}/assignments**: Lists all assignments for a class/term.
-10. **GET /classes/{className}/assignments/{assignmentID}**: Gets a specific assignment result.
+2. **POST /auth/login**: Authenticates a user and returns a JWT token.
+3. **GET /auth/users**: Lists all users (admin and superadmin only).
+4. **POST /auth/users**: Creates a new user (admin and superadmin only).
+5. **GET /auth/users/{username}**: Gets a specific user (admin and superadmin only, or the user themselves).
+6. **PUT /auth/users/{username}**: Updates a user's roles and enabled status (admin and superadmin only).
+7. **DELETE /auth/users/{username}**: Deletes a user (superadmin only).
+8. **GET /user/whoami**: Gets the current user's information (username, status, and roles).
+9. **POST /classes**: Creates a new class/term.
+10. **GET /classes**: Lists all class/terms.
+11. **POST /classes/{className}/projects**: Uploads projects for a class/term.
+12. **GET /classes/{className}/projects**: Gets projects for a class/term.
+13. **POST /classes/{className}/students**: Uploads students for a class/term.
+14. **GET /classes/{className}/students**: Gets students for a class/term.
+15. **POST /classes/{className}/assign**: Runs the assignment algorithm for a class/term.
+16. **GET /classes/{className}/assignments**: Lists all assignments for a class/term.
+17. **GET /classes/{className}/assignments/{assignmentID}**: Gets a specific assignment result.
 
 ## Test Results
 
