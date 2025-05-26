@@ -310,13 +310,13 @@ func (h *Handler) MasterRouter(w http.ResponseWriter, r *http.Request) {
 		}
 	case path == "/version":
 		// Handle the /version endpoint
-		VersionHandler(w, r)
+		h.VersionHandler(w, r)
 	case path == "/docs":
 		// Handle the /docs endpoint for API documentation
 		http.NotFound(w, r) // This should be updated to use the docs package
 	case path == "/auth/login" || strings.HasPrefix(path, "/auth/users") || path == "/user/whoami":
 		// Handle authentication endpoints
-		AuthResourceHandler(w, r)
+		h.AuthResourceHandler(w, r)
 	case path == "/classes":
 		h.HandleClassesBase(w, r)
 	case strings.HasPrefix(path, "/classes/"):
