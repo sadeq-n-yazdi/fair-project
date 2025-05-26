@@ -21,7 +21,7 @@ const (
 // User represents a user in the system
 type User struct {
 	Username     string    `json:"username"`
-	PasswordHash string    `json:"-"` // Never expose password hash in JSON responses
+	PasswordHash string    `json:"passwordHash,omitempty"` // Include in storage but can be omitted in responses
 	Roles        []Role    `json:"roles"`
 	Enabled      bool      `json:"enabled"`
 	CreatedAt    time.Time `json:"createdAt"`
