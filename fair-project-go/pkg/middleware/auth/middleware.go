@@ -36,9 +36,9 @@ func GetUserFromContext(r *http.Request) (*models.User, bool) {
 // Middleware returns a middleware function that validates JWT tokens
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Skip authentication for docs and root endpoints
+		// Skip authentication for docs, root, and specific endpoints
 		if r.URL.Path == "/" || r.URL.Path == "/docs" || r.URL.Path == "/version" ||
-			strings.HasPrefix(r.URL.Path, "/auth") {
+			strings.HasPrefix(r.URL.Path, "/auth") || r.URL.Path == "/user/whoami" {
 			next.ServeHTTP(w, r)
 			return
 		}

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sadeq/fair-project-go/pkg/auth"
@@ -340,12 +341,88 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request, username string) 
 	RespondJSON(w, http.StatusOK, map[string]string{"message": "User deleted successfully"})
 }
 
+// WhoAmIHandler handles GET requests to /user/whoami
+// It returns the current user's information if authenticated
+// If not authenticated, it returns a JSON response indicating that
+func WhoAmIHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only GET method is allowed"))
+		return
+	}
+
+	// Get the Authorization header
+	authHeader := r.Header.Get("Authorization")
+
+	// If no Authorization header, return a response indicating not authenticated
+	if authHeader == "" {
+		RespondJSON(w, http.StatusOK, map[string]interface{}{
+			"authenticated": false,
+			"message":       "No JWT token provided",
+		})
+		return
+	}
+
+	// Check if the Authorization header has the correct format
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		RespondJSON(w, http.StatusOK, map[string]interface{}{
+			"authenticated": false,
+			"message":       "Invalid authorization header format",
+		})
+		return
+	}
+
+	// Extract the token
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Validate the token
+	claims, err := auth.ValidateToken(tokenString)
+	if err != nil {
+		RespondJSON(w, http.StatusOK, map[string]interface{}{
+			"authenticated": false,
+			"message":       "Invalid or expired token",
+		})
+		return
+	}
+
+	// Get the user from the database
+	username := claims.Username
+	user, exists, err := storage.GetUser(username)
+	if err != nil || !exists {
+		RespondJSON(w, http.StatusOK, map[string]interface{}{
+			"authenticated": false,
+			"message":       "User not found",
+		})
+		return
+	}
+
+	if !user.Enabled {
+		RespondJSON(w, http.StatusOK, map[string]interface{}{
+			"authenticated": false,
+			"message":       "User is disabled",
+		})
+		return
+	}
+
+	// Return the user information
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"authenticated": true,
+		"username":      user.Username,
+		"status":        user.Enabled,
+		"roles":         user.Roles,
+	})
+}
+
 // AuthResourceHandler handles requests to /auth/{resource}
 // It routes to the appropriate handler based on the resource
 func AuthResourceHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	if path == "/auth/login" {
 		LoginHandler(w, r)
+		return
+	}
+
+	if path == "/user/whoami" {
+		WhoAmIHandler(w, r)
 		return
 	}
 

@@ -4,19 +4,14 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"log"
-	"math/rand"
-	"os"
-	"strings"
-	"time"
-
 	"github.com/sadeq/fair-project-go/pkg/cli"
 	"github.com/sadeq/fair-project-go/pkg/storage"
+	"log"
+	"os"
+	"strings"
 )
 
 func main() {
-	// Seed the random number generator
-	rand.Seed(time.Now().UnixNano())
 
 	// Ensure the base data directory exists
 	if err := storage.EnsureBaseDir(); err != nil {

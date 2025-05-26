@@ -71,7 +71,7 @@ func masterRouter(w http.ResponseWriter, r *http.Request) {
 	case path == "/docs":
 		// Handle the /docs endpoint for API documentation
 		docs.Handler(w, r)
-	case path == "/auth/login" || strings.HasPrefix(path, "/auth/users"):
+	case path == "/auth/login" || strings.HasPrefix(path, "/auth/users") || path == "/user/whoami":
 		// Handle authentication endpoints
 		api.AuthResourceHandler(w, r)
 	case path == "/classes":
