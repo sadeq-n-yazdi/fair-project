@@ -85,6 +85,10 @@ func main() {
 
 	listUsersCmd := flag.NewFlagSet("list-users", flag.ExitOnError)
 
+	// Define env file generation command flags
+	generateEnvCmd := flag.NewFlagSet("generate-env", flag.ExitOnError)
+	generateEnvOutput := generateEnvCmd.String("output", ".env", "Path to the output .env file")
+
 	// Parse the command
 	switch os.Args[1] {
 	case "create-class":
@@ -276,6 +280,13 @@ func main() {
 			log.Fatalf("Error: %v", err)
 		}
 
+	case "generate-env":
+		generateEnvCmd.Parse(os.Args[2:])
+		err := cli.GenerateEnvFile(*generateEnvOutput)
+		if err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
 	default:
 		fmt.Printf("Unknown command: %s\n", os.Args[1])
 		printUsage()
@@ -341,6 +352,7 @@ func printUsage() {
 	fmt.Println("  create-superadmin  Create the first superadmin user")
 	fmt.Println("  change-password    Change a user's password")
 	fmt.Println("  list-users         List all users")
+	fmt.Println("  generate-env       Generate a new .env file with random values for sensitive fields")
 	fmt.Println("  help               Show this help message")
 	fmt.Println("\nRun 'fair-ctl <command> -h' for more information on a command.")
 }

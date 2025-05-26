@@ -550,3 +550,60 @@ func PromptForSuperAdmin() error {
 	// Create the superadmin
 	return CreateSuperAdmin(username, password, key)
 }
+
+// GenerateEnvFile generates a new .env file with random values for sensitive fields
+func GenerateEnvFile(outputPath string) error {
+	// Generate random values for sensitive fields
+	jwtSecret, err := generateRandomString(64)
+	if err != nil {
+		return fmt.Errorf("failed to generate JWT secret: %v", err)
+	}
+
+	superadminKey, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("failed to generate superadmin key: %v", err)
+	}
+
+	postgresPassword, err := generateRandomString(16)
+	if err != nil {
+		return fmt.Errorf("failed to generate PostgreSQL password: %v", err)
+	}
+
+	// Create the .env file content
+	envContent := `# Fair Project API Configuration
+
+# JWT Secret for authentication
+JWT_SECRET=%s
+
+# Super Admin Key (used for creating the first super admin via CLI)
+SUPERADMIN_KEY=%s
+
+# Server port
+PORT=8080
+
+# Data directory
+DATA_DIR=data
+
+# Log level (NONE, ERROR, INFO, DEBUG)
+LOG_LEVEL=INFO
+
+# PostgreSQL Configuration
+POSTGRES_USER=fairuser
+POSTGRES_PASSWORD=%s
+POSTGRES_DB=fairdb
+POSTGRES_PORT=5432
+`
+
+	// Format the content with the generated values
+	envContent = fmt.Sprintf(envContent, jwtSecret, superadminKey, postgresPassword)
+
+	// Write the content to the output file
+	err = os.WriteFile(outputPath, []byte(envContent), 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write .env file: %v", err)
+	}
+
+	fmt.Printf("Generated .env file at %s with random values for sensitive fields.\n", outputPath)
+	fmt.Println("Please keep this file secure as it contains sensitive information.")
+	return nil
+}

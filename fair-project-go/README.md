@@ -162,6 +162,10 @@ Commands:
   list-assignments   List all assignments for a class/term
   show-assignment    Show the details of an assignment
   export-assignment  Export an assignment to a JSON file
+  create-superadmin  Create the first superadmin user
+  change-password    Change a user's password
+  list-users         List all users
+  generate-env       Generate a new .env file with random values for sensitive fields
   help               Show this help message
 
 Run 'fair-project-cli <command> -h' for more information on a command.
@@ -204,6 +208,15 @@ Export an assignment to a JSON file:
 ```bash
 ./bin/fair-project-cli export-assignment -class Fall2023 -id <assignment-id> -output assignment.json
 ```
+
+Generate a new .env file with random values for sensitive fields:
+
+```bash
+./bin/fair-project-cli generate-env -output .env
+```
+
+This will create a new .env file with random values for JWT_SECRET, SUPERADMIN_KEY, and POSTGRES_PASSWORD, while setting
+sensible defaults for other configuration values.
 
 ## Logging
 
