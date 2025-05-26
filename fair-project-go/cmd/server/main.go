@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -130,7 +131,144 @@ func loadEnvFile() {
 	}
 }
 
-// printVersion prints the version information and exits
+// handleCompletion generates shell completion scripts
+func handleCompletion(shell, outFile string) error {
+	if shell == "" {
+		return fmt.Errorf("shell type is required")
+	}
+
+	// Normalize shell name
+	shell = strings.ToLower(shell)
+
+	// Get the binary name
+	binaryName := filepath.Base(os.Args[0])
+
+	// Create the completion script
+	var script string
+	switch shell {
+	case "bash":
+		script = generateBashCompletion(binaryName)
+	case "zsh":
+		script = generateZshCompletion(binaryName)
+	case "fish":
+		script = generateFishCompletion(binaryName)
+	default:
+		return fmt.Errorf("unsupported shell type: %s (supported: bash, zsh, fish)", shell)
+	}
+
+	// Write to file or stdout
+	if outFile != "" {
+		if err := os.WriteFile(outFile, []byte(script), 0644); err != nil {
+			return fmt.Errorf("failed to write completion script to %s: %w", outFile, err)
+		}
+		fmt.Printf("Completion script written to %s\n", outFile)
+		fmt.Printf("To install, run:\n")
+		switch shell {
+		case "bash":
+			fmt.Printf("  echo \"source %s\" >> ~/.bashrc\n", outFile)
+		case "zsh":
+			fmt.Printf("  echo \"source %s\" >> ~/.zshrc\n", outFile)
+		case "fish":
+			fmt.Printf("  echo \"source %s\" >> ~/.config/fish/config.fish\n", outFile)
+		}
+	} else {
+		fmt.Println(script)
+		fmt.Printf("\nTo install, add the above to your shell configuration file or run:\n")
+		switch shell {
+		case "bash":
+			fmt.Printf("  %s --completion bash > ~/.%s-completion.bash && echo \"source ~/.%s-completion.bash\" >> ~/.bashrc\n",
+				binaryName, binaryName, binaryName)
+		case "zsh":
+			fmt.Printf("  %s --completion zsh > ~/.%s-completion.zsh && echo \"source ~/.%s-completion.zsh\" >> ~/.zshrc\n",
+				binaryName, binaryName, binaryName)
+		case "fish":
+			fmt.Printf("  %s --completion fish > ~/.config/fish/%s-completion.fish\n", binaryName, binaryName)
+		}
+	}
+
+	return nil
+}
+
+// generateBashCompletion generates a bash completion script
+func generateBashCompletion(binaryName string) string {
+	return fmt.Sprintf(`#!/bin/bash
+
+_%s_completions() {
+  COMPREPLY=()
+  local word="${COMP_WORDS[COMP_CWORD]}"
+  local completions="$(COMP_LINE="${COMP_LINE}" COMP_POINT="${COMP_POINT}" %s __complete)"
+  COMPREPLY=( $(compgen -W "$completions" -- "$word") )
+}
+
+complete -F _%s_completions %s
+`, binaryName, binaryName, binaryName, binaryName)
+}
+
+// generateZshCompletion generates a zsh completion script
+func generateZshCompletion(binaryName string) string {
+	return fmt.Sprintf(`#compdef %s
+
+_%s() {
+  local -a completions
+  completions=("${(@f)$(COMP_LINE="${words[*]}" COMP_POINT=$#words %s __complete)}")
+  _describe 'completions' completions
+}
+
+compdef _%s %s
+`, binaryName, binaryName, binaryName, binaryName, binaryName)
+}
+
+// generateFishCompletion generates a fish completion script
+func generateFishCompletion(binaryName string) string {
+	return fmt.Sprintf(`function __fish_%s_complete
+  set -l cl (commandline --tokenize --current-process)
+  set -l tokens (commandline --tokenize --cut-at-cursor --current-process)
+  %s __complete $tokens | tr '\n' ' '
+end
+
+complete -f -c %s -a '(__fish_%s_complete)'
+`, binaryName, binaryName, binaryName, binaryName)
+}
+
+// handleCompletionRequest handles the __complete command for shell completion
+func handleCompletionRequest() error {
+	// Get the completion line from the environment
+	line := os.Getenv("COMP_LINE")
+	if line == "" {
+		return fmt.Errorf("COMP_LINE environment variable not set")
+	}
+
+	// Split the line into words
+	words := strings.Fields(line)
+	if len(words) <= 1 {
+		// If there's only one word (the command itself), output available flags
+		fmt.Println("--version")
+		fmt.Println("-v")
+		fmt.Println("--completion")
+		fmt.Println("--completion-output")
+		return nil
+	}
+
+	// If there are more words, handle completion for specific flags
+	lastWord := words[len(words)-1]
+	if strings.HasPrefix("--completion", lastWord) {
+		fmt.Println("--completion")
+		return nil
+	}
+	if strings.HasPrefix("--completion-output", lastWord) {
+		fmt.Println("--completion-output")
+		return nil
+	}
+	if words[len(words)-2] == "--completion" {
+		fmt.Println("bash")
+		fmt.Println("zsh")
+		fmt.Println("fish")
+		return nil
+	}
+
+	return nil
+}
+
 func printVersion() {
 	versionInfo := version.Map()
 
@@ -158,11 +296,29 @@ func main() {
 	// Define global flags
 	versionFlag := flag.Bool("version", false, "Print version information and exit")
 	versionFlagShort := flag.Bool("v", false, "Print version information and exit (shorthand)")
+	completionFlag := flag.String("completion", "", "Generate shell completion script (bash, zsh, fish)")
+	completionOutputFlag := flag.String("completion-output", "", "Output file for completion script")
 	flag.Parse()
 
 	// Check if version flag is set
 	if *versionFlag || *versionFlagShort {
 		printVersion()
+		return
+	}
+
+	// Check if completion flag is set
+	if *completionFlag != "" {
+		if err := handleCompletion(*completionFlag, *completionOutputFlag); err != nil {
+			log.Fatalf("Error generating completion script: %v", err)
+		}
+		return
+	}
+
+	// Check if this is a completion request
+	if len(os.Args) > 1 && os.Args[1] == "__complete" {
+		if err := handleCompletionRequest(); err != nil {
+			log.Fatalf("Error handling completion request: %v", err)
+		}
 		return
 	}
 

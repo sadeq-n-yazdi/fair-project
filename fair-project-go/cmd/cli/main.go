@@ -104,6 +104,11 @@ func main() {
 	generateEnvCmd := flag.NewFlagSet("generate-env", flag.ExitOnError)
 	generateEnvOutput := generateEnvCmd.String("output", ".env", "Path to the output .env file")
 
+	// Define completion command flags
+	completionCmd := flag.NewFlagSet("completion", flag.ExitOnError)
+	completionShell := completionCmd.String("shell", "", "Shell type (bash, zsh, fish)")
+	completionOutput := completionCmd.String("output", "", "Path to the output file")
+
 	// Parse the command
 	switch os.Args[1] {
 	case "create-class":
@@ -302,6 +307,25 @@ func main() {
 			log.Fatalf("Error: %v", err)
 		}
 
+	case "completion":
+		completionCmd.Parse(os.Args[2:])
+		if *completionShell == "" {
+			fmt.Println("Error: shell type is required")
+			completionCmd.PrintDefaults()
+			os.Exit(1)
+		}
+		err := cli.CompletionCommand(*completionShell, *completionOutput)
+		if err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
+	case "__complete":
+		// This is a special command used by the shell completion scripts
+		// It outputs the list of possible completions for the current command line
+		if err := handleCompletion(); err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
 	default:
 		fmt.Printf("Unknown command: %s\n", os.Args[1])
 		printUsage()
@@ -373,6 +397,60 @@ func loadEnvFile() {
 	}
 }
 
+// handleCompletion handles the __complete command for shell completion
+func handleCompletion() error {
+	// Get the completion line from the environment
+	line := os.Getenv("COMP_LINE")
+	if line == "" {
+		return fmt.Errorf("COMP_LINE environment variable not set")
+	}
+
+	// Split the line into words
+	words := strings.Fields(line)
+	if len(words) <= 1 {
+		// If there's only one word (the command itself), output all available commands
+		fmt.Println("create-class")
+		fmt.Println("list-classes")
+		fmt.Println("import-projects")
+		fmt.Println("import-students")
+		fmt.Println("list-projects")
+		fmt.Println("list-students")
+		fmt.Println("run-assignment")
+		fmt.Println("list-assignments")
+		fmt.Println("show-assignment")
+		fmt.Println("export-assignment")
+		fmt.Println("create-superadmin")
+		fmt.Println("change-password")
+		fmt.Println("list-users")
+		fmt.Println("generate-env")
+		fmt.Println("completion")
+		fmt.Println("help")
+		return nil
+	}
+
+	// If there are more words, handle completion for specific commands
+	command := words[1]
+	switch command {
+	case "completion":
+		if len(words) <= 2 || (len(words) > 2 && strings.HasPrefix("-shell", words[len(words)-1])) {
+			fmt.Println("-shell")
+			return nil
+		}
+		if strings.HasPrefix("-output", words[len(words)-1]) {
+			fmt.Println("-output")
+			return nil
+		}
+		if words[len(words)-2] == "-shell" {
+			fmt.Println("bash")
+			fmt.Println("zsh")
+			fmt.Println("fish")
+			return nil
+		}
+	}
+
+	return nil
+}
+
 func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  fair-ctl <command> [options]")
@@ -391,6 +469,7 @@ func printUsage() {
 	fmt.Println("  change-password    Change a user's password")
 	fmt.Println("  list-users         List all users")
 	fmt.Println("  generate-env       Generate a new .env file with random values for sensitive fields")
+	fmt.Println("  completion         Generate shell completion scripts")
 	fmt.Println("  help               Show this help message")
 	fmt.Println("\nRun 'fair-ctl <command> -h' for more information on a command.")
 }

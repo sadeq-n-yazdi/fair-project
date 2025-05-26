@@ -114,8 +114,8 @@ complete -f -c %s -a '(__fish_%s_complete)'
 `, binaryName, binaryName, binaryName, binaryName)
 }
 
-// createCompletionSpec creates a completion spec for the CLI
-func createCompletionSpec(binaryName string) *complete.Command {
+// CreateCompletionSpec creates a completion spec for the CLI
+func CreateCompletionSpec(binaryName string) *complete.Command {
 	// Create a completion command
 	cmd := &complete.Command{
 		Sub: complete.Commands{
