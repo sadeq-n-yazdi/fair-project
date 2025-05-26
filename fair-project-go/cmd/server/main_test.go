@@ -100,3 +100,28 @@ func TestNotFoundForInvalidPath(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotFound)
 	}
 }
+
+func TestDocsEndpoint(t *testing.T) {
+	// Create a request to the docs endpoint
+	req, err := http.NewRequest(http.MethodGet, "/docs", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	// Create a response recorder
+	rr := httptest.NewRecorder()
+
+	// Call the masterRouter function
+	masterRouter(rr, req)
+
+	// Check the status code
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	// Check the content type
+	expectedContentType := "text/html"
+	if contentType := rr.Header().Get("Content-Type"); contentType != expectedContentType {
+		t.Errorf("handler returned wrong content type: got %v want %v", contentType, expectedContentType)
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sadeq/fair-project-go/pkg/docs"
 	"github.com/sadeq/fair-project-go/pkg/errors"
 	"github.com/sadeq/fair-project-go/pkg/models"
 	"github.com/sadeq/fair-project-go/pkg/storage"
@@ -313,7 +314,7 @@ func (h *Handler) MasterRouter(w http.ResponseWriter, r *http.Request) {
 		h.VersionHandler(w, r)
 	case path == "/docs":
 		// Handle the /docs endpoint for API documentation
-		http.NotFound(w, r) // This should be updated to use the docs package
+		docs.Handler(w, r)
 	case path == "/auth/login" || strings.HasPrefix(path, "/auth/users") || path == "/user/whoami":
 		// Handle authentication endpoints
 		h.AuthResourceHandler(w, r)
