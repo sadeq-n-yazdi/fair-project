@@ -138,7 +138,7 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request, className string) {
 // URL: /classes/{className}/students
 func StudentsHandler(w http.ResponseWriter, r *http.Request, className string) {
 	if !storage.IsValidClassName(className) {
-		RespondError(w, http.StatusBadRequest, "Invalid class/term name format in URL.")
+		HandleError(w, errors.New(errors.ErrInvalidClassName, "Invalid class/term name format"))
 		return
 	}
 
@@ -146,7 +146,7 @@ func StudentsHandler(w http.ResponseWriter, r *http.Request, className string) {
 	case http.MethodPost: // Upload students
 		var students []models.StudentInput // Type from models package
 		if err := json.NewDecoder(r.Body).Decode(&students); err != nil {
-			RespondError(w, http.StatusBadRequest, "Invalid request body, expected JSON array of student objects: "+err.Error())
+			HandleError(w, errors.Wrap(err, errors.ErrInvalidRequestBody, "Invalid request body, expected JSON array of student objects"))
 			return
 		}
 		defer r.Body.Close()
@@ -156,9 +156,9 @@ func StudentsHandler(w http.ResponseWriter, r *http.Request, className string) {
 		err := storage.SaveStudents(className, students) // From storage.go
 		if err != nil {
 			if os.IsNotExist(err) { // Check if class directory doesn't exist
-				RespondError(w, http.StatusNotFound, "Class/term directory '"+className+"' not found: "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrClassNotFound, "Class/term not found"))
 			} else {
-				RespondError(w, http.StatusInternalServerError, "Failed to save students: "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrFailedToSaveStudents, "Failed to save students"))
 			}
 			return
 		}
@@ -168,9 +168,9 @@ func StudentsHandler(w http.ResponseWriter, r *http.Request, className string) {
 		students, err := storage.LoadStudents(className) // From storage.go
 		if err != nil {
 			if os.IsNotExist(err) {
-				RespondError(w, http.StatusNotFound, "Students file not found for class/term '"+className+"': "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrStudentsNotFound, "Students not found"))
 			} else {
-				RespondError(w, http.StatusInternalServerError, "Failed to load students: "+err.Error())
+				HandleError(w, errors.Wrap(err, errors.ErrFailedToLoadStudents, "Failed to load students"))
 			}
 			return
 		}
@@ -180,7 +180,7 @@ func StudentsHandler(w http.ResponseWriter, r *http.Request, className string) {
 		RespondJSON(w, http.StatusOK, students)
 
 	default:
-		RespondError(w, http.StatusMethodNotAllowed, "Only GET and POST methods are allowed for students")
+		HandleError(w, errors.New(errors.ErrMethodNotAllowed, "Only GET and POST methods are allowed for students"))
 	}
 }
 
@@ -194,19 +194,19 @@ func MasterClassResourceHandler(w http.ResponseWriter, r *http.Request) {
 	if len(parts) < 1 || parts[0] == "" {
 		// This case should ideally be handled by a more specific /classes handler if it's for listing or creating classes.
 		// If it reaches here, it means it's an invalid path like /classes//projects
-		RespondError(w, http.StatusBadRequest, "Class/term name missing in URL path")
+		HandleError(w, errors.New(errors.ErrInvalidRequestBody, "Class/term name missing in URL path"))
 		return
 	}
 	className := parts[0]
 
 	if !storage.IsValidClassName(className) {
-		RespondError(w, http.StatusBadRequest, "Invalid class/term name format in URL: "+className)
+		HandleError(w, errors.New(errors.ErrInvalidClassName, "Invalid class/term name format"))
 		return
 	}
 
 	if len(parts) == 1 {
 		// Potentially a handler for /classes/{className} - e.g., get class details (not specified yet)
-		RespondError(w, http.StatusNotFound, "Resource type (e.g., projects, students) missing in URL path for class '"+className+"'")
+		HandleError(w, errors.New(errors.ErrResourceNotFound, "Resource type missing in URL path"))
 		return
 	}
 
@@ -227,15 +227,15 @@ func MasterClassResourceHandler(w http.ResponseWriter, r *http.Request) {
 		} else if len(parts) == 3 { // Exactly /classes/{className}/assignments/{assignmentID}
 			assignmentID := parts[2]
 			if !storage.IsValidClassName(assignmentID) { // Reuse validation for simplicity
-				RespondError(w, http.StatusBadRequest, "Invalid assignment ID format in URL: "+assignmentID)
+				HandleError(w, errors.New(errors.ErrInvalidAssignmentID, "Invalid assignment ID format"))
 				return
 			}
 			GetAssignmentResultHandler(w, r, className, assignmentID) // Defined in assignment_handlers.go
 		} else {
 			// Path is too long, e.g., /classes/{className}/assignments/{id}/something_else
-			RespondError(w, http.StatusNotFound, "Invalid path structure for assignments resource.")
+			HandleError(w, errors.New(errors.ErrResourceNotFound, "Invalid path structure for assignments resource"))
 		}
 	default:
-		RespondError(w, http.StatusNotFound, "Unknown resource type '"+resourceType+"' for class '"+className+"'")
+		HandleError(w, errors.New(errors.ErrResourceNotFound, "Unknown resource type"))
 	}
 }

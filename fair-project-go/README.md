@@ -2,6 +2,8 @@
 
 A tool for assigning projects to students based on their preferences in a fair way.
 
+**Current Version:** 0.0.1 (includes Git branch hash when built with Docker or using build flags)
+
 ## Project Structure
 
 The project has been restructured into the following packages:
@@ -12,6 +14,8 @@ The project has been restructured into the following packages:
 - `pkg/api`: HTTP API handlers
 - `pkg/cli`: Command-line interface functions
 - `pkg/docs`: API documentation (OpenAPI specification and Swagger UI)
+- `pkg/errors`: Error handling and logging
+- `pkg/version`: Version information
 
 And the following entry points:
 
@@ -28,6 +32,19 @@ go build -o bin/fair-project-server ./cmd/server
 go build -o bin/fair-project-cli ./cmd/cli
 ```
 
+### Building with Git Branch Hash
+
+To include the Git branch hash in the version information, use the following build command:
+
+```bash
+cd fair-project-go
+BRANCH_HASH=$(git rev-parse --short HEAD)
+go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$BRANCH_HASH'" -o bin/fair-project-server ./cmd/server
+go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$BRANCH_HASH'" -o bin/fair-project-cli ./cmd/cli
+```
+
+When building with Docker, the Git branch hash is automatically included in the version information.
+
 ## Running the Server
 
 To run the HTTP server:
@@ -38,7 +55,8 @@ To run the HTTP server:
 
 The server will start on port 8080 and provide the following endpoints:
 
-- `GET /`: Welcome message
+- `GET /`: Welcome message with version information
+- `GET /version`: Get the current version of the API
 - `GET /docs`: API documentation (HTML UI or JSON)
 - `POST /classes`: Create a new class/term
 - `GET /classes`: List all class/terms

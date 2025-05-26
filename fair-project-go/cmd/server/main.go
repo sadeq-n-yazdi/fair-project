@@ -11,6 +11,7 @@ import (
 	"github.com/sadeq/fair-project-go/pkg/api"
 	"github.com/sadeq/fair-project-go/pkg/docs"
 	"github.com/sadeq/fair-project-go/pkg/storage"
+	"github.com/sadeq/fair-project-go/pkg/version"
 )
 
 // handleClassesBase routes requests for the /classes endpoint.
@@ -51,10 +52,17 @@ func masterRouter(w http.ResponseWriter, r *http.Request) {
 	case path == "/":
 		// Handle root path if needed, e.g., a welcome message or API documentation link
 		if r.Method == http.MethodGet {
-			api.RespondJSON(w, http.StatusOK, map[string]string{"message": "Welcome to the Fair Project Assignment API"})
+			// Include version information in the welcome message
+			api.RespondJSON(w, http.StatusOK, map[string]interface{}{
+				"message": "Welcome to the Fair Project Assignment API",
+				"version": version.String(),
+			})
 		} else {
 			api.RespondError(w, http.StatusMethodNotAllowed, "Only GET is allowed for the root path")
 		}
+	case path == "/version":
+		// Handle the /version endpoint
+		api.VersionHandler(w, r)
 	case path == "/docs":
 		// Handle the /docs endpoint for API documentation
 		docs.Handler(w, r)

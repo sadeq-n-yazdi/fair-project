@@ -1,6 +1,9 @@
 # Build stage
 FROM golang:1.24-alpine AS builder
 
+# Install git
+RUN apk add --no-cache git
+
 # Set working directory
 WORKDIR /app
 
@@ -13,8 +16,10 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o /fair-project-server ./cmd/server
+# Get the current git branch hash
+RUN BRANCH_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") && \
+    # Build the application with the branch hash
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'github.com/sadeq/fair-project-go/pkg/version.BranchHash=$BRANCH_HASH'" -o /fair-project-server ./cmd/server
 
 # Final stage
 FROM alpine:latest

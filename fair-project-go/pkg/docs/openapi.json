@@ -3,7 +3,7 @@
   "info": {
     "title": "Fair Project Assignment API",
     "description": "API for assigning projects to students based on their preferences in a fair way.",
-    "version": "1.0.0"
+    "version": "0.0.1"
   },
   "servers": [
     {
@@ -15,10 +15,10 @@
     "/": {
       "get": {
         "summary": "Welcome message",
-        "description": "Returns a welcome message for the API",
+        "description": "Returns a welcome message for the API with version information",
         "responses": {
           "200": {
-            "description": "Welcome message",
+            "description": "Welcome message with version",
             "content": {
               "application/json": {
                 "schema": {
@@ -27,6 +27,10 @@
                     "message": {
                       "type": "string",
                       "example": "Welcome to the Fair Project Assignment API"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "0.0.1"
                     }
                   }
                 }
@@ -697,6 +701,57 @@
           },
           "500": {
             "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "summary": "API Version",
+        "description": "Returns the current version of the API",
+        "responses": {
+          "200": {
+            "description": "Version information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string",
+                      "example": "0.0.1"
+                    },
+                    "major": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "minor": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "patch": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "branch_hash": {
+                      "type": "string",
+                      "example": "a1b2c3d",
+                      "description": "Git branch hash, included when built with Docker or using build flags"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
             "content": {
               "application/json": {
                 "schema": {
