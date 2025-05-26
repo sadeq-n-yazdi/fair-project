@@ -1,16 +1,95 @@
 package cli
 
 import (
+	"bufio"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"math/big"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/sadeq/fair-project-go/pkg/assignment"
+	"github.com/sadeq/fair-project-go/pkg/auth"
 	"github.com/sadeq/fair-project-go/pkg/models"
 	"github.com/sadeq/fair-project-go/pkg/storage"
 )
+
+// generateRandomString generates a random alphanumeric string of the specified length
+func generateRandomString(length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	result := make([]byte, length)
+	charsetLength := big.NewInt(int64(len(charset)))
+
+	for i := 0; i < length; i++ {
+		randomIndex, err := rand.Int(rand.Reader, charsetLength)
+		if err != nil {
+			return "", err
+		}
+		result[i] = charset[randomIndex.Int64()]
+	}
+
+	return string(result), nil
+}
+
+// updateEnvFile updates or adds a key-value pair in the .env file
+func updateEnvFile(key, value string) error {
+	// Try to open the .env file
+	envPath := ".env"
+	if _, err := os.Stat(envPath); os.IsNotExist(err) {
+		// Try to find the .env file in the parent directory
+		envPath = "../.env"
+		if _, err := os.Stat(envPath); os.IsNotExist(err) {
+			return fmt.Errorf("could not find .env file")
+		}
+	}
+
+	// Read the file content
+	content, err := ioutil.ReadFile(envPath)
+	if err != nil {
+		return fmt.Errorf("failed to read .env file: %v", err)
+	}
+
+	// Create a regex to find the key
+	re := regexp.MustCompile(fmt.Sprintf(`(?m)^%s=.*$`, regexp.QuoteMeta(key)))
+
+	// Check if the key exists in the file
+	if re.Match(content) {
+		// Replace the existing key-value pair
+		newContent := re.ReplaceAllString(string(content), fmt.Sprintf("%s=%s", key, value))
+		err = ioutil.WriteFile(envPath, []byte(newContent), 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write to .env file: %v", err)
+		}
+	} else {
+		// Append the new key-value pair to the file
+		file, err := os.OpenFile(envPath, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open .env file: %v", err)
+		}
+		defer file.Close()
+
+		// Add a newline if the file doesn't end with one
+		if len(content) > 0 && content[len(content)-1] != '\n' {
+			_, err = file.WriteString("\n")
+			if err != nil {
+				return fmt.Errorf("failed to write to .env file: %v", err)
+			}
+		}
+
+		// Write the new key-value pair
+		_, err = file.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+		if err != nil {
+			return fmt.Errorf("failed to write to .env file: %v", err)
+		}
+	}
+
+	return nil
+}
 
 // CreateClassTerm creates a new class/term directory
 func CreateClassTerm(className string) error {
@@ -294,4 +373,180 @@ func ExportAssignment(className string, assignmentID string, outputPath string) 
 
 	fmt.Printf("Assignment '%s' for class/term '%s' exported to %s\n", assignmentID, className, outputPath)
 	return nil
+}
+
+// CreateSuperAdmin creates the first superadmin user
+// This function requires the SUPERADMIN_KEY from the .env file
+func CreateSuperAdmin(username, password, key string) error {
+	// Check if the superadmin key is correct
+	expectedKey := os.Getenv("SUPERADMIN_KEY")
+	if expectedKey == "" {
+		return fmt.Errorf("SUPERADMIN_KEY not set in environment variables")
+	}
+
+	if key != expectedKey {
+		return fmt.Errorf("invalid superadmin key")
+	}
+
+	// Check if any users already exist
+	users, err := storage.LoadUsers()
+	if err != nil {
+		return fmt.Errorf("failed to load users: %v", err)
+	}
+
+	// Check if there are any superadmins already
+	for _, user := range users {
+		for _, role := range user.Roles {
+			if role == models.RoleSuperAdmin {
+				return fmt.Errorf("a superadmin user already exists")
+			}
+		}
+	}
+
+	// Hash the password
+	passwordHash, err := auth.HashPassword(password)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+
+	// Create the superadmin user
+	superadmin := models.User{
+		Username:     username,
+		PasswordHash: passwordHash,
+		Roles:        []models.Role{models.RoleSuperAdmin},
+		Enabled:      true,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	// Save the user
+	if err := storage.SaveUser(superadmin); err != nil {
+		return fmt.Errorf("failed to save user: %v", err)
+	}
+
+	fmt.Printf("Superadmin user '%s' created successfully\n", username)
+	return nil
+}
+
+// ChangeUserPassword changes a user's password
+func ChangeUserPassword(username, newPassword string) error {
+	// Get the user
+	user, exists, err := storage.GetUser(username)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %v", err)
+	}
+
+	if !exists {
+		return fmt.Errorf("user '%s' not found", username)
+	}
+
+	// Hash the new password
+	passwordHash, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+
+	// Update the user's password
+	user.PasswordHash = passwordHash
+	user.UpdatedAt = time.Now()
+
+	// Save the user
+	if err := storage.SaveUser(user); err != nil {
+		return fmt.Errorf("failed to save user: %v", err)
+	}
+
+	fmt.Printf("Password for user '%s' changed successfully\n", username)
+	return nil
+}
+
+// ListUsers lists all users
+func ListUsers() error {
+	// Get all users
+	users, err := storage.LoadUsers()
+	if err != nil {
+		return fmt.Errorf("failed to load users: %v", err)
+	}
+
+	if len(users) == 0 {
+		fmt.Println("No users found")
+		return nil
+	}
+
+	fmt.Println("Users:")
+	for _, user := range users {
+		status := "Enabled"
+		if !user.Enabled {
+			status = "Disabled"
+		}
+		fmt.Printf("- %s (Roles: %v, Status: %s)\n", user.Username, user.Roles, status)
+	}
+	return nil
+}
+
+// PromptForSuperAdmin prompts the user to create a superadmin if none exists
+func PromptForSuperAdmin() error {
+	// Check if any users already exist
+	users, err := storage.LoadUsers()
+	if err != nil {
+		return fmt.Errorf("failed to load users: %v", err)
+	}
+
+	// Check if there are any superadmins already
+	for _, user := range users {
+		for _, role := range user.Roles {
+			if role == models.RoleSuperAdmin {
+				// Superadmin already exists, no need to prompt
+				return nil
+			}
+		}
+	}
+
+	// No superadmin exists, prompt to create one
+	fmt.Println("No superadmin user found. Would you like to create one? (y/n)")
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read input: %v", err)
+	}
+
+	response = strings.TrimSpace(strings.ToLower(response))
+	if response != "y" && response != "yes" {
+		fmt.Println("Skipping superadmin creation")
+		return nil
+	}
+
+	// Get superadmin details
+	fmt.Print("Enter username for superadmin: ")
+	username, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read input: %v", err)
+	}
+	username = strings.TrimSpace(username)
+
+	fmt.Print("Enter password for superadmin: ")
+	password, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read input: %v", err)
+	}
+	password = strings.TrimSpace(password)
+
+	// Generate a random superadmin key
+	key, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("failed to generate superadmin key: %v", err)
+	}
+
+	// Update the .env file with the generated key
+	err = updateEnvFile("SUPERADMIN_KEY", key)
+	if err != nil {
+		return fmt.Errorf("failed to update .env file: %v", err)
+	}
+
+	// Show the generated key to the user
+	fmt.Printf("Generated SUPERADMIN_KEY: %s\n", key)
+	fmt.Println("This key has been saved to your .env file.")
+	fmt.Println("Please keep it secure as it will be needed for future superadmin operations.")
+
+	// Create the superadmin
+	return CreateSuperAdmin(username, password, key)
 }

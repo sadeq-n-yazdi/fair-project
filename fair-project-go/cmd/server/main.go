@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"log"
 	"math/rand"
 	"net/http"
@@ -9,8 +10,10 @@ import (
 	"time"
 
 	"github.com/sadeq/fair-project-go/pkg/api"
+	authpkg "github.com/sadeq/fair-project-go/pkg/auth"
 	"github.com/sadeq/fair-project-go/pkg/config"
 	"github.com/sadeq/fair-project-go/pkg/docs"
+	authmiddleware "github.com/sadeq/fair-project-go/pkg/middleware/auth"
 	"github.com/sadeq/fair-project-go/pkg/middleware/logging"
 	"github.com/sadeq/fair-project-go/pkg/storage"
 	"github.com/sadeq/fair-project-go/pkg/version"
@@ -68,6 +71,9 @@ func masterRouter(w http.ResponseWriter, r *http.Request) {
 	case path == "/docs":
 		// Handle the /docs endpoint for API documentation
 		docs.Handler(w, r)
+	case path == "/auth/login" || strings.HasPrefix(path, "/auth/users"):
+		// Handle authentication endpoints
+		api.AuthResourceHandler(w, r)
 	case path == "/classes":
 		handleClassesBase(w, r)
 	case strings.HasPrefix(path, "/classes/"):
@@ -79,9 +85,53 @@ func masterRouter(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// loadEnvFile loads environment variables from .env file
+func loadEnvFile() {
+	// Try to open the .env file
+	file, err := os.Open(".env")
+	if err != nil {
+		// Try to find the .env file in the parent directory
+		file, err = os.Open("../.env")
+		if err != nil {
+			log.Printf("Warning: Could not open .env file: %v", err)
+			return
+		}
+	}
+	defer file.Close()
+
+	// Read the file line by line
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Skip comments and empty lines
+		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		// Split the line into key and value
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		// Set the environment variable
+		os.Setenv(key, value)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Warning: Error reading .env file: %v", err)
+	}
+}
+
 func main() {
 	// 1. Seed the random number generator
 	rand.Seed(time.Now().UnixNano())
+
+	// 1.5. Load environment variables from .env file
+	loadEnvFile()
 
 	// 2. Initialize configuration from environment variables
 	config.InitFromEnv()
@@ -101,17 +151,28 @@ func main() {
 		log.Fatalf("Failed to ensure base data directory: %v", err)
 	}
 
-	// 5. Create a handler with the logging middleware
-	handler := logging.Middleware(http.HandlerFunc(masterRouter))
+	// 5. Initialize default users
+	if err := storage.InitializeDefaultUsers(); err != nil {
+		log.Fatalf("Failed to initialize default users: %v", err)
+	}
 
-	// 6. Get the port from environment variable or use default
+	// 6. Set JWT secret from environment variable or use default
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret != "" {
+		authpkg.SetJWTSecret(jwtSecret)
+	}
+
+	// 7. Create a handler with the logging and authentication middleware
+	handler := logging.Middleware(authmiddleware.Middleware(http.HandlerFunc(masterRouter)))
+
+	// 8. Get the port from environment variable or use default
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	port = ":" + port
 
-	// 7. Start the HTTP server with the middleware
+	// 9. Start the HTTP server with the middleware
 	log.Printf("Starting server on port %s. Listening for requests on / , /classes, and /classes/...\n", port)
 	if err := http.ListenAndServe(port, handler); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

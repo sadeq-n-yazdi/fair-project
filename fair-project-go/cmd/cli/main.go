@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/sadeq/fair-project-go/pkg/cli"
@@ -19,6 +21,14 @@ func main() {
 	// Ensure the base data directory exists
 	if err := storage.EnsureBaseDir(); err != nil {
 		log.Fatalf("Failed to ensure base data directory: %v", err)
+	}
+
+	// Load environment variables from .env file
+	loadEnvFile()
+
+	// Prompt for superadmin creation if none exists
+	if err := cli.PromptForSuperAdmin(); err != nil {
+		log.Printf("Warning: Failed to prompt for superadmin: %v", err)
 	}
 
 	// Define command-line flags
@@ -62,6 +72,18 @@ func main() {
 		printUsage()
 		os.Exit(1)
 	}
+
+	// Define user management command flags
+	createSuperAdminCmd := flag.NewFlagSet("create-superadmin", flag.ExitOnError)
+	createSuperAdminUsername := createSuperAdminCmd.String("username", "", "Username for the superadmin")
+	createSuperAdminPassword := createSuperAdminCmd.String("password", "", "Password for the superadmin")
+	createSuperAdminKey := createSuperAdminCmd.String("key", "", "Superadmin key from .env file")
+
+	changePasswordCmd := flag.NewFlagSet("change-password", flag.ExitOnError)
+	changePasswordUsername := changePasswordCmd.String("username", "", "Username of the user")
+	changePasswordNewPassword := changePasswordCmd.String("password", "", "New password for the user")
+
+	listUsersCmd := flag.NewFlagSet("list-users", flag.ExitOnError)
 
 	// Parse the command
 	switch os.Args[1] {
@@ -208,6 +230,52 @@ func main() {
 	case "help":
 		printUsage()
 
+	case "create-superadmin":
+		createSuperAdminCmd.Parse(os.Args[2:])
+		if *createSuperAdminUsername == "" {
+			fmt.Println("Error: username is required")
+			createSuperAdminCmd.PrintDefaults()
+			os.Exit(1)
+		}
+		if *createSuperAdminPassword == "" {
+			fmt.Println("Error: password is required")
+			createSuperAdminCmd.PrintDefaults()
+			os.Exit(1)
+		}
+		if *createSuperAdminKey == "" {
+			fmt.Println("Error: superadmin key is required")
+			createSuperAdminCmd.PrintDefaults()
+			os.Exit(1)
+		}
+		err := cli.CreateSuperAdmin(*createSuperAdminUsername, *createSuperAdminPassword, *createSuperAdminKey)
+		if err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
+	case "change-password":
+		changePasswordCmd.Parse(os.Args[2:])
+		if *changePasswordUsername == "" {
+			fmt.Println("Error: username is required")
+			changePasswordCmd.PrintDefaults()
+			os.Exit(1)
+		}
+		if *changePasswordNewPassword == "" {
+			fmt.Println("Error: new password is required")
+			changePasswordCmd.PrintDefaults()
+			os.Exit(1)
+		}
+		err := cli.ChangeUserPassword(*changePasswordUsername, *changePasswordNewPassword)
+		if err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
+	case "list-users":
+		listUsersCmd.Parse(os.Args[2:])
+		err := cli.ListUsers()
+		if err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
 	default:
 		fmt.Printf("Unknown command: %s\n", os.Args[1])
 		printUsage()
@@ -215,9 +283,50 @@ func main() {
 	}
 }
 
+// loadEnvFile loads environment variables from .env file
+func loadEnvFile() {
+	// Try to open the .env file
+	file, err := os.Open(".env")
+	if err != nil {
+		// Try to find the .env file in the parent directory
+		file, err = os.Open("../.env")
+		if err != nil {
+			log.Printf("Warning: Could not open .env file: %v", err)
+			return
+		}
+	}
+	defer file.Close()
+
+	// Read the file line by line
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Skip comments and empty lines
+		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		// Split the line into key and value
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		// Set the environment variable
+		os.Setenv(key, value)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Warning: Error reading .env file: %v", err)
+	}
+}
+
 func printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  fair-project-cli <command> [options]")
+	fmt.Println("  fair-ctl <command> [options]")
 	fmt.Println("\nCommands:")
 	fmt.Println("  create-class       Create a new class/term")
 	fmt.Println("  list-classes       List all class/terms")
@@ -229,6 +338,9 @@ func printUsage() {
 	fmt.Println("  list-assignments   List all assignments for a class/term")
 	fmt.Println("  show-assignment    Show the details of an assignment")
 	fmt.Println("  export-assignment  Export an assignment to a JSON file")
+	fmt.Println("  create-superadmin  Create the first superadmin user")
+	fmt.Println("  change-password    Change a user's password")
+	fmt.Println("  list-users         List all users")
 	fmt.Println("  help               Show this help message")
-	fmt.Println("\nRun 'fair-project-cli <command> -h' for more information on a command.")
+	fmt.Println("\nRun 'fair-ctl <command> -h' for more information on a command.")
 }
