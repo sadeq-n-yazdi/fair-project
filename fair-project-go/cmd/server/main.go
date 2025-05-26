@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -68,17 +69,32 @@ func main() {
 	// 1. Seed the random number generator
 	rand.Seed(time.Now().UnixNano())
 
-	// 2. Ensure the base data directory exists
+	// 2. Set the base data directory from environment variable or use default
+	dataDir := os.Getenv("DATA_DIR")
+	if dataDir != "" {
+		storage.SetBaseDataDir(dataDir)
+		log.Printf("Using data directory: %s", dataDir)
+	} else {
+		log.Printf("Using default data directory: %s", storage.GetBaseDataDir())
+	}
+
+	// 3. Ensure the base data directory exists
 	if err := storage.EnsureBaseDir(); err != nil { // From storage.go
 		log.Fatalf("Failed to ensure base data directory: %v", err)
 	}
 
-	// 3. Register handlers using the masterRouter
+	// 4. Register handlers using the masterRouter
 	// The masterRouter will delegate to the appropriate handlers.
 	http.HandleFunc("/", masterRouter)
 
-	// 4. Start the HTTP server
-	port := ":8080"
+	// 5. Get the port from environment variable or use default
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	port = ":" + port
+
+	// 6. Start the HTTP server
 	log.Printf("Starting server on port %s. Listening for requests on / , /classes, and /classes/...\n", port)
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

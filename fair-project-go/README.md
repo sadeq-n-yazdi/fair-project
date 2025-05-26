@@ -110,6 +110,49 @@ Export an assignment to a JSON file:
 ./bin/fair-project-cli export-assignment -class Fall2023 -id <assignment-id> -output assignment.json
 ```
 
+## Docker
+
+The API server can be run in a Docker container. The Dockerfile is provided in the repository.
+
+### Building the Docker Image
+
+To build the Docker image, run:
+
+```bash
+cd fair-project-go
+docker build -t fair-project-server .
+```
+
+### Running the Docker Container
+
+To run the Docker container:
+
+```bash
+docker run -p 8080:8080 -v /path/to/data:/app/data fair-project-server
+```
+
+This will:
+- Map port 8080 on your host to port 8080 in the container
+- Mount `/path/to/data` on your host to `/app/data` in the container (where the data will be stored)
+
+### Configuration
+
+The Docker container can be configured using environment variables:
+
+- `PORT`: The port on which the server will listen (default: 8080)
+- `DATA_DIR`: The directory where the data will be stored (default: /app/data)
+
+Example:
+
+```bash
+docker run -p 9000:9000 -e PORT=9000 -e DATA_DIR=/data -v /path/to/data:/data fair-project-server
+```
+
+This will:
+- Run the server on port 9000
+- Store the data in `/data` inside the container
+- Mount `/path/to/data` on your host to `/data` in the container
+
 ## File Formats
 
 ### Projects File
