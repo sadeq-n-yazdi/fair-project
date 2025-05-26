@@ -56,6 +56,12 @@ make docker
 
 # Show all available targets
 make help
+
+# Run the server
+make run-server
+
+# Run the CLI with arguments
+make run-cli ARGS="command [options]"
 ```
 
 ### Using the Build Script
@@ -145,7 +151,28 @@ The server will start on port 8080 and provide the following endpoints:
 
 ## Using the CLI
 
-The CLI provides a command-line interface for the application. Here are the available commands:
+The CLI provides a command-line interface for the application. You can run it directly or use the `make run-cli`
+command:
+
+```bash
+# Run the CLI directly
+./bin/fair-ctl <command> [options]
+
+# Run the CLI using make
+make run-cli ARGS="<command> [options]"
+```
+
+For example, to create a new class/term:
+
+```bash
+# Direct method
+./bin/fair-ctl create-class -name Fall2023
+
+# Using make
+make run-cli ARGS="create-class -name Fall2023"
+```
+
+Here are the available commands:
 
 ```
 Usage:
@@ -207,13 +234,21 @@ Show the details of an assignment:
 Export an assignment to a JSON file:
 
 ```bash
+# Direct method
 ./bin/fair-ctl export-assignment -class Fall2023 -id <assignment-id> -output assignment.json
+
+# Using make
+make run-cli ARGS="export-assignment -class Fall2023 -id <assignment-id> -output assignment.json"
 ```
 
 Generate a new .env file with random values for sensitive fields:
 
 ```bash
+# Direct method
 ./bin/fair-ctl generate-env -output .env
+
+# Using make
+make run-cli ARGS="generate-env -output .env"
 ```
 
 This will create a new .env file with random values for JWT_SECRET, SUPERADMIN_KEY, and POSTGRES_PASSWORD, while setting
@@ -229,20 +264,33 @@ flags, and arguments by pressing the Tab key.
 You can generate shell completion scripts using the `completion` command:
 
 ```bash
-# For Bash
+# For Bash (direct method)
 ./bin/fair-ctl completion bash > ~/.fair-ctl-completion.bash
 
-# For Zsh
+# For Bash (using make)
+make run-cli ARGS="completion bash" > ~/.fair-ctl-completion.bash
+
+# For Zsh (direct method)
 ./bin/fair-ctl completion zsh > ~/.fair-ctl-completion.zsh
 
-# For Fish
+# For Zsh (using make)
+make run-cli ARGS="completion zsh" > ~/.fair-ctl-completion.zsh
+
+# For Fish (direct method)
 ./bin/fair-ctl completion fish > ~/.config/fish/fair-ctl-completion.fish
+
+# For Fish (using make)
+make run-cli ARGS="completion fish" > ~/.config/fish/fair-ctl-completion.fish
 ```
 
 You can also specify an output file directly:
 
 ```bash
+# Direct method
 ./bin/fair-ctl completion -shell bash -output ~/.fair-ctl-completion.bash
+
+# Using make
+make run-cli ARGS="completion -shell bash -output ~/.fair-ctl-completion.bash"
 ```
 
 #### Activating Autocompletion
@@ -275,7 +323,11 @@ source ~/.config/fish/fair-ctl-completion.fish
 You can also use the CLI to automatically install and activate completion for your current shell:
 
 ```bash
+# Direct method
 ./bin/fair-ctl completion -shell $(basename $SHELL) -output ~/.$(basename $SHELL)rc_fair-ctl
+
+# Using make
+make run-cli ARGS="completion -shell $(basename $SHELL) -output ~/.$(basename $SHELL)rc_fair-ctl"
 ```
 
 This will generate the appropriate completion script and add it to your shell configuration file.
