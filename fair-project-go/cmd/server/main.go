@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sadeq/fair-project-go/pkg/api"
+	"github.com/sadeq/fair-project-go/pkg/docs"
 	"github.com/sadeq/fair-project-go/pkg/storage"
 )
 
@@ -54,6 +55,9 @@ func masterRouter(w http.ResponseWriter, r *http.Request) {
 		} else {
 			api.RespondError(w, http.StatusMethodNotAllowed, "Only GET is allowed for the root path")
 		}
+	case path == "/docs":
+		// Handle the /docs endpoint for API documentation
+		docs.Handler(w, r)
 	case path == "/classes":
 		handleClassesBase(w, r)
 	case strings.HasPrefix(path, "/classes/"):

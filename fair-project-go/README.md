@@ -11,6 +11,7 @@ The project has been restructured into the following packages:
 - `pkg/storage`: Data persistence and file I/O operations
 - `pkg/api`: HTTP API handlers
 - `pkg/cli`: Command-line interface functions
+- `pkg/docs`: API documentation (OpenAPI specification and Swagger UI)
 
 And the following entry points:
 
@@ -38,6 +39,7 @@ To run the HTTP server:
 The server will start on port 8080 and provide the following endpoints:
 
 - `GET /`: Welcome message
+- `GET /docs`: API documentation (HTML UI or JSON)
 - `POST /classes`: Create a new class/term
 - `GET /classes`: List all class/terms
 - `POST /classes/{className}/projects`: Upload projects for a class/term
@@ -109,6 +111,17 @@ Export an assignment to a JSON file:
 ```bash
 ./bin/fair-project-cli export-assignment -class Fall2023 -id <assignment-id> -output assignment.json
 ```
+
+## API Documentation
+
+The API is documented using the OpenAPI 3.0 specification. You can access the documentation in two ways:
+
+1. **Web UI**: Visit the `/docs` endpoint in your web browser to view the interactive API documentation using Swagger UI.
+2. **JSON Format**: To get the OpenAPI specification in JSON format, you can:
+   - Add the query parameter `?format=json` to the `/docs` endpoint
+   - Set the `Accept: application/json` header in your request to the `/docs` endpoint
+
+The documentation includes all API endpoints, request/response formats, and data models.
 
 ## Docker
 
