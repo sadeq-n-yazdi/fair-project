@@ -255,6 +255,12 @@ cd fair-project-go
 docker build -t fair-project-server .
 ```
 
+Or use the Makefile:
+
+```bash
+make docker
+```
+
 ### Running the Docker Container
 
 To run the Docker container:
@@ -278,8 +284,12 @@ The Docker container can be configured using environment variables:
   - `error`: Logs only errors
   - `info`: Logs errors and informational messages
   - `debug`: Logs errors, informational messages, and debug messages (including request/response bodies)
+- `JWT_SECRET`: The secret key used to sign JWT tokens (default: a random string)
+- `SUPERADMIN_KEY`: The key used for creating the first super admin via CLI
 
-Example:
+#### Using Environment Variables Directly
+
+You can pass environment variables directly to the Docker container:
 
 ```bash
 docker run -p 9000:9000 -e PORT=9000 -e DATA_DIR=/data -e LOG_LEVEL=debug -v /path/to/data:/data fair-project-server
@@ -290,6 +300,157 @@ This will:
 - Store the data in `/data` inside the container
 - Set the log level to debug (verbose logging)
 - Mount `/path/to/data` on your host to `/data` in the container
+
+#### Using an Environment File
+
+You can also use an environment file (`.env`) to configure the Docker container:
+
+1. Create a `.env` file with your configuration (or copy and modify the provided `.env.example`):
+
+```
+# Server port
+PORT=9000
+
+# Data directory
+DATA_DIR=/data
+
+# Log level
+LOG_LEVEL=debug
+
+# JWT Secret
+JWT_SECRET=your_jwt_secret_here
+
+# Other configuration...
+```
+
+2. Run the Docker container with the `--env-file` option:
+
+```bash
+docker run -p 9000:9000 --env-file .env -v /path/to/data:/data fair-project-server
+```
+
+## Docker Compose
+
+For a more complete setup, you can use Docker Compose to run the API server along with a PostgreSQL database.
+
+### Starting the Services
+
+To start all services:
+
+```bash
+cd fair-project-go
+docker-compose up -d
+```
+
+Or use the Makefile:
+
+```bash
+make docker-compose-up
+```
+
+This will start:
+
+- The API server on port 8080
+- A PostgreSQL database on port 5432
+
+### Stopping the Services
+
+To stop all services:
+
+```bash
+cd fair-project-go
+docker-compose down
+```
+
+Or use the Makefile:
+
+```bash
+make docker-compose-down
+```
+
+### Viewing Logs
+
+To view the logs from all services:
+
+```bash
+cd fair-project-go
+docker-compose logs -f
+```
+
+Or use the Makefile:
+
+```bash
+make docker-compose-logs
+```
+
+### Configuration
+
+The services can be configured using environment variables. Docker Compose is set up to automatically use variables from
+a `.env` file in the project root.
+
+#### Using the .env File
+
+The project includes an `.env.example` file that you can copy to create your own `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file to set your configuration:
+
+```
+# JWT Secret for authentication
+JWT_SECRET=your_jwt_secret_here
+
+# Super Admin Key
+SUPERADMIN_KEY=your_superadmin_key_here
+
+# Server port
+PORT=8080
+
+# Data directory
+DATA_DIR=data
+
+# Log level
+LOG_LEVEL=INFO
+
+# PostgreSQL Configuration
+POSTGRES_USER=fairuser
+POSTGRES_PASSWORD=your_postgres_password_here
+POSTGRES_DB=fairdb
+POSTGRES_PORT=5432
+```
+
+Docker Compose will automatically use these variables when you run `docker-compose up`.
+
+#### API Server Configuration
+
+The API server can be configured using the following environment variables:
+
+- `PORT`: The port on which the server will listen (default: 8080)
+- `DATA_DIR`: The directory where the data will be stored (default: /app/data)
+- `LOG_LEVEL`: The verbosity level of logging (default: info)
+- `JWT_SECRET`: The secret key used to sign JWT tokens
+- `SUPERADMIN_KEY`: The key used for creating the first super admin via CLI
+
+#### PostgreSQL Configuration
+
+The PostgreSQL database can be configured using the following environment variables:
+
+- `POSTGRES_USER`: The username for the database (default: fairuser)
+- `POSTGRES_PASSWORD`: The password for the database (default: fairpassword)
+- `POSTGRES_DB`: The name of the database (default: fairdb)
+- `POSTGRES_PORT`: The port on which PostgreSQL will listen (default: 5432)
+
+#### Overriding Environment Variables
+
+You can also override environment variables when starting Docker Compose:
+
+```bash
+PORT=9000 POSTGRES_PORT=5433 docker-compose up -d
+```
+
+This will use the values from the command line instead of the `.env` file for those specific variables.
 
 ## File Formats
 

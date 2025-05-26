@@ -49,6 +49,22 @@ docker:
 	@echo "Building Docker image..."
 	docker build -t fair-project-server .
 
+# Docker Compose commands
+.PHONY: docker-compose-up
+docker-compose-up:
+	@echo "Starting services with Docker Compose..."
+	docker-compose up -d
+
+.PHONY: docker-compose-down
+docker-compose-down:
+	@echo "Stopping services with Docker Compose..."
+	docker-compose down
+
+.PHONY: docker-compose-logs
+docker-compose-logs:
+	@echo "Showing logs from Docker Compose services..."
+	docker-compose logs -f
+
 # Run the server
 .PHONY: run-server
 run-server: build-server
@@ -71,14 +87,17 @@ version: build-server
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  all          : Build both server and CLI binaries (default)"
-	@echo "  build        : Build both server and CLI binaries"
-	@echo "  build-server : Build the server binary"
-	@echo "  build-cli    : Build the CLI binary"
-	@echo "  test         : Run tests"
-	@echo "  clean        : Clean build artifacts"
-	@echo "  docker       : Build Docker image"
-	@echo "  run-server   : Build and run the server"
-	@echo "  run-cli      : Build and run the CLI (use ARGS=\"arg1 arg2\" to pass arguments)"
-	@echo "  version      : Show version information"
-	@echo "  help         : Show this help message"
+	@echo "  all               : Build both server and CLI binaries (default)"
+	@echo "  build             : Build both server and CLI binaries"
+	@echo "  build-server      : Build the server binary"
+	@echo "  build-cli         : Build the CLI binary"
+	@echo "  test              : Run tests"
+	@echo "  clean             : Clean build artifacts"
+	@echo "  docker            : Build Docker image"
+	@echo "  docker-compose-up : Start services with Docker Compose"
+	@echo "  docker-compose-down : Stop services with Docker Compose"
+	@echo "  docker-compose-logs : Show logs from Docker Compose services"
+	@echo "  run-server        : Build and run the server"
+	@echo "  run-cli           : Build and run the CLI (use ARGS=\"arg1 arg2\" to pass arguments)"
+	@echo "  version           : Show version information"
+	@echo "  help              : Show this help message"

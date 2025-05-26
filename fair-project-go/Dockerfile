@@ -41,9 +41,12 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 # Create data directory and set permissions
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
 
-# Set environment variables
+# Set default environment variables
 ENV PORT=8080
 ENV DATA_DIR=/app/data
+ENV LOG_LEVEL=info
+ENV JWT_SECRET=""
+ENV SUPERADMIN_KEY=""
 
 # Switch to non-root user
 USER appuser

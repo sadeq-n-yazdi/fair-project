@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fair-project-server
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=${PORT:-8080}
+      - DATA_DIR=${DATA_DIR:-/app/data}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JWT_SECRET=${JWT_SECRET}
+      - SUPERADMIN_KEY=${SUPERADMIN_KEY}
+    restart: unless-stopped
+    networks:
+      - fair-network
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: fair-project-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-fairuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fairpassword}
+      - POSTGRES_DB=${POSTGRES_DB:-fairdb}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - fair-network
+    env_file:
+      - .env
+
+networks:
+  fair-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
